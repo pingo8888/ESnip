@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Note } from "./notes.fixture";
+import type { Note } from "./noteTypes";
 
 defineProps<{
   contextMenuEnabled?: boolean;

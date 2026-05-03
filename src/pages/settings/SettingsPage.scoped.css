@@ -76,6 +76,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 40px 24px 40px;
+  scrollbar-gutter: stable;
   scrollbar-color: rgba(128, 119, 108, 0.64) rgba(232, 224, 211, 0.64);
   scrollbar-width: thin;
 }
@@ -96,9 +97,10 @@
 
 .settings-layout {
   display: grid;
-  width: min(920px, 100%);
+  width: 920px;
+  max-width: 100%;
   margin: 0 auto;
-  grid-template-columns: 200px minmax(0, 1fr);
+  grid-template-columns: 200px 684px;
   gap: 36px;
 }
 
@@ -149,6 +151,7 @@
 }
 
 .settings-content {
+  width: 100%;
   min-width: 0;
 }
 
@@ -350,14 +353,14 @@
 
 .card-preview-strip {
   display: grid;
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
   grid-template-columns: repeat(2, minmax(0, var(--preview-card-width, 210px)));
-  overflow: auto;
+  justify-content: start;
+  overflow: hidden;
   border: 1px solid rgba(228, 220, 207, 0.72);
   padding: 20px;
   background: rgba(255, 254, 250, 0.24);
-  scrollbar-width: thin;
 }
 
 .card-preview-frame {

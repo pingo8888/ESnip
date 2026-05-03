@@ -20,7 +20,7 @@ defineEmits<{
         <button type="button" aria-label="最小化" title="最小化" @click="$emit('minimizeWindow')">
           <Minus aria-hidden="true" />
         </button>
-        <button type="button" aria-label="最大化或还原" title="最大化或还原" @click="$emit('toggleMaximizeWindow')">
+        <button type="button" aria-label="最大化" title="最大化" @click="$emit('toggleMaximizeWindow')">
           <Square aria-hidden="true" />
         </button>
         <button type="button" class="window-close" aria-label="关闭" title="关闭" @click="$emit('closeWindow')">

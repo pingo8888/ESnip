@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { Plus, Search, Settings, X } from "lucide-vue-next";
 import NoteCard from "./NoteCard.vue";
 import NoteContextMenu from "./NoteContextMenu.vue";
-import type { Note } from "./notes.fixture";
+import type { Note } from "./noteTypes";
 
-defineProps<{
+const props = defineProps<{
   masonryColumns: Note[][];
+  searchQuery: string;
 }>();
 
 const emit = defineEmits<{
@@ -15,6 +16,7 @@ const emit = defineEmits<{
   editNote: [note: Note];
   notesScrollReady: [el: HTMLElement | null];
   openSettings: [];
+  updateSearchQuery: [query: string];
 }>();
 
 const contextMenu = ref<{
@@ -22,7 +24,7 @@ const contextMenu = ref<{
   x: number;
   y: number;
 } | null>(null);
-const searchQuery = ref("");
+const sectionTitle = computed(() => (props.searchQuery.trim() ? "搜索结果" : "最近添加"));
 
 function openContextMenu(event: MouseEvent, note: Note) {
   const menuWidth = 198;
@@ -69,7 +71,11 @@ function handleGlobalKeyDown(event: KeyboardEvent) {
 }
 
 function clearSearch() {
-  searchQuery.value = "";
+  emit("updateSearchQuery", "");
+}
+
+function updateSearchQuery(event: Event) {
+  emit("updateSearchQuery", (event.target as HTMLInputElement).value);
 }
 
 onMounted(() => {
@@ -101,7 +107,12 @@ onUnmounted(() => {
         <span class="search-icon">
           <Search aria-hidden="true" />
         </span>
-        <input v-model="searchQuery" type="search" placeholder="搜索你的摘录..." />
+        <input
+          :value="searchQuery"
+          type="search"
+          placeholder="搜索你的摘录..."
+          @input="updateSearchQuery"
+        />
         <button
           v-if="searchQuery"
           type="button"
@@ -117,7 +128,7 @@ onUnmounted(() => {
     </header>
 
     <section class="notes-section" aria-labelledby="recent-heading">
-      <h2 id="recent-heading">最近添加</h2>
+      <h2 id="recent-heading">{{ sectionTitle }}</h2>
 
       <div
         :ref="(el) => $emit('notesScrollReady', el as HTMLElement | null)"

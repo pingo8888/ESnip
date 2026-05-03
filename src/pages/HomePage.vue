@@ -1,25 +1,34 @@
 <script setup lang="ts">
-import { computed, nextTick, onUnmounted, ref } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref } from "vue";
+import type { UnlistenFn } from "@tauri-apps/api/event";
+import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import DeleteNoteConfirm from "./home/DeleteNoteConfirm.vue";
 import HomeShellView from "./home/HomeShellView.vue";
 import HomePageView from "./home/HomePageView.vue";
-import { testNotes, type Note } from "./home/notes.fixture";
+import type { Note, NoteInput, NoteUpdateInput } from "./home/noteTypes";
+import { findNoteByTitle } from "./home/notesRepository";
 import { useNoteCollection } from "./home/useNoteCollection";
 import NewCardPage from "./new-card/NewCardPage.vue";
 import SettingsPage from "./settings/SettingsPage.vue";
 
 type WorkPage = "home" | "new-card" | "edit-card";
 type ActivePage = WorkPage | "settings";
+type QuickCapturePayload = {
+  title?: string | null;
+};
 
 const activePage = ref<ActivePage>("home");
 const settingsReturnPage = ref<WorkPage | null>(null);
-const { notes, addNote, deleteNote, updateNote } = useNoteCollection(testNotes);
+const { notes, addNote, deleteNote, loadInitialNotes, searchQuery, setSearchQuery, updateNote } = useNoteCollection();
 const editingNote = ref<Note | null>(null);
 const deletingNote = ref<Note | null>(null);
+const newCardInitialTitle = ref("");
+const newCardDraftKey = ref(0);
 const notesScrollEl = ref<HTMLElement | null>(null);
 const notesScrollWidth = ref(0);
 let resizeObserver: ResizeObserver | undefined;
+let unlistenQuickCapture: UnlistenFn | undefined;
 
 const columnCount = computed(() => {
   const width = notesScrollWidth.value;
@@ -81,8 +90,10 @@ function updateNotesScrollWidth() {
   notesScrollWidth.value = notesScrollEl.value?.clientWidth ?? 0;
 }
 
-function showNewCardPage() {
+function showNewCardPage(initialTitle = "") {
   editingNote.value = null;
+  newCardInitialTitle.value = initialTitle;
+  newCardDraftKey.value += 1;
   activePage.value = "new-card";
 }
 
@@ -109,15 +120,41 @@ function showEditCardPage(note: Note) {
   activePage.value = "edit-card";
 }
 
-function saveNewNote(note: Note) {
-  addNote(note);
+async function handleQuickCapture(payload: QuickCapturePayload) {
+  const title = payload.title?.trim() ?? "";
+
+  if (!title) {
+    showNewCardPage();
+    return;
+  }
+
+  try {
+    const note = await findNoteByTitle(title);
+
+    if (note) {
+      showEditCardPage(note);
+      return;
+    }
+  } catch (error) {
+    console.error("Failed to find captured note title", error);
+  }
+
+  showNewCardPage(title);
+}
+
+async function saveNewNote(note: NoteInput) {
+  await addNote(note);
   activePage.value = "home";
 
   void nextTick(updateNotesScrollWidth);
 }
 
-function saveEditedNote(note: Note) {
-  updateNote(note);
+async function saveEditedNote(note: NoteInput | NoteUpdateInput) {
+  if (!("id" in note)) {
+    return;
+  }
+
+  await updateNote(note);
   editingNote.value = null;
   activePage.value = "home";
 
@@ -132,19 +169,29 @@ function cancelDeleteNote() {
   deletingNote.value = null;
 }
 
-function confirmDeleteNote() {
+async function confirmDeleteNote() {
   if (!deletingNote.value) {
     return;
   }
 
-  deleteNote(deletingNote.value.id);
+  await deleteNote(deletingNote.value.id);
   deletingNote.value = null;
 
   void nextTick(updateNotesScrollWidth);
 }
 
+onMounted(() => {
+  void loadInitialNotes();
+  void listen<QuickCapturePayload>("quick-capture", (event) => {
+    void handleQuickCapture(event.payload);
+  }).then((unlisten) => {
+    unlistenQuickCapture = unlisten;
+  });
+});
+
 onUnmounted(() => {
   resizeObserver?.disconnect();
+  unlistenQuickCapture?.();
 });
 
 async function minimizeWindow() {
@@ -185,15 +232,19 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
     <HomePageView
       v-show="activePage === 'home'"
       :masonry-columns="masonryColumns"
+      :search-query="searchQuery"
       @create-note="showNewCardPage"
       @delete-note="requestDeleteNote"
       @edit-note="showEditCardPage"
       @notes-scroll-ready="setNotesScrollElement"
       @open-settings="showSettingsPage"
+      @update-search-query="setSearchQuery"
     />
     <NewCardPage
       v-if="activePage === 'new-card' || settingsReturnPage === 'new-card'"
       v-show="activePage === 'new-card'"
+      :draft-key="newCardDraftKey"
+      :initial-title="newCardInitialTitle"
       mode="create"
       @cancel="showHomePage"
       @open-settings="showSettingsPage"

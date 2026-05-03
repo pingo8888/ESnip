@@ -2,15 +2,19 @@
 import { computed, ref, watch } from "vue";
 import { ArrowLeft, Settings } from "lucide-vue-next";
 import NoteCard from "../home/NoteCard.vue";
-import type { Note, NoteKind, NoteTone } from "../home/notes.fixture";
+import type { Note, NoteInput, NoteKind, NoteTone, NoteUpdateInput } from "../home/noteTypes";
 
 const props = withDefaults(
   defineProps<{
+    draftKey?: number;
     initialNote?: Note | null;
+    initialTitle?: string;
     mode?: "create" | "edit";
   }>(),
   {
+    draftKey: 0,
     initialNote: null,
+    initialTitle: "",
     mode: "create",
   },
 );
@@ -27,7 +31,7 @@ const tagsInput = ref("");
 const emit = defineEmits<{
   cancel: [];
   openSettings: [];
-  save: [note: Note];
+  save: [note: NoteInput | NoteUpdateInput];
 }>();
 
 const pageTitle = computed(() => (props.mode === "edit" ? "编辑卡片" : "新建卡片"));
@@ -47,21 +51,36 @@ const previewNote = computed<Note>(() => ({
   tags: parsedTags.value,
   kind: kind.value,
   tone: tone.value,
+  createdAt: props.initialNote?.createdAt ?? Date.now(),
+  updatedAt: props.initialNote?.updatedAt ?? Date.now(),
 }));
 
 function saveCard() {
-  emit("save", {
-    ...previewNote.value,
-    id: props.mode === "edit" && props.initialNote ? props.initialNote.id : `note-${Date.now()}`,
-  });
+  const input: NoteInput = {
+    title: title.value.trim() || undefined,
+    excerpt: excerpt.value.trim() || undefined,
+    tags: parsedTags.value,
+    kind: kind.value,
+    tone: tone.value,
+  };
+
+  emit(
+    "save",
+    props.mode === "edit" && props.initialNote
+      ? {
+          ...input,
+          id: props.initialNote.id,
+        }
+      : input,
+  );
 }
 
 watch(
-  () => props.initialNote,
-  (note) => {
+  () => [props.mode, props.initialNote, props.initialTitle, props.draftKey] as const,
+  ([mode, note, initialTitle]) => {
     kind.value = note?.kind ?? "词语";
     tone.value = note?.tone ?? "sage";
-    title.value = note?.title ?? "";
+    title.value = mode === "edit" ? (note?.title ?? "") : initialTitle;
     excerpt.value = note?.excerpt ?? "";
     tagsInput.value = note?.tags.join(", ") ?? "";
   },

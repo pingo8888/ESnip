@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 import { ArrowLeft, ChevronDown, Settings } from "lucide-vue-next";
 import NoteCard from "../home/NoteCard.vue";
-import type { Note, NoteKind } from "../home/notes.fixture";
+import type { Note, NoteKind } from "../home/noteTypes";
 
 type SettingsTab = "general" | "cards" | "storage" | "shortcuts" | "about";
 
@@ -66,6 +66,8 @@ const previewNote = computed<Note>(() => ({
   tags: ["预览"],
   kind: defaultKind.value,
   tone: "sage",
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
 }));
 
 const previewNotes = computed<Note[]>(() =>

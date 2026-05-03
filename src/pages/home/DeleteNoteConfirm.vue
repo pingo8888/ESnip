@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import type { Note } from "./notes.fixture";
+import type { Note } from "./noteTypes";
 
 defineProps<{
   note: Note;
