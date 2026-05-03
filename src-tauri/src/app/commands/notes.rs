@@ -32,6 +32,13 @@ pub(crate) fn find_note_by_title(state: State<'_, DbState>, title: String) -> Re
 }
 
 #[tauri::command]
+pub(crate) fn list_tags(state: State<'_, DbState>, prefix: String, limit: Option<i64>) -> Result<Vec<String>, String> {
+    let conn = state.conn.lock().map_err(|error| error.to_string())?;
+
+    crate::store::notes::list_tags(&conn, prefix, limit)
+}
+
+#[tauri::command]
 pub(crate) fn create_note(state: State<'_, DbState>, input: SaveNoteInput) -> Result<NoteDto, String> {
     let conn = state.conn.lock().map_err(|error| error.to_string())?;
 

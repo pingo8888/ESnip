@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { ArrowLeft, Settings } from "lucide-vue-next";
 import NoteCard from "../home/NoteCard.vue";
 import type { Note, NoteInput, NoteKind, NoteTone, NoteUpdateInput } from "../home/noteTypes";
+import TagSuggestInput from "../shared/TagSuggestInput.vue";
 
 const props = withDefaults(
   defineProps<{
     draftKey?: number;
+    active?: boolean;
     initialNote?: Note | null;
     initialTitle?: string;
     mode?: "create" | "edit";
   }>(),
   {
     draftKey: 0,
+    active: true,
     initialNote: null,
     initialTitle: "",
     mode: "create",
@@ -27,6 +30,7 @@ const tone = ref<NoteTone>("sage");
 const title = ref("");
 const excerpt = ref("");
 const tagsInput = ref("");
+const tagSuggestionsOpen = ref(false);
 
 const emit = defineEmits<{
   cancel: [];
@@ -36,12 +40,7 @@ const emit = defineEmits<{
 
 const pageTitle = computed(() => (props.mode === "edit" ? "编辑卡片" : "新建卡片"));
 
-const parsedTags = computed(() =>
-  tagsInput.value
-    .split(/[,，]/)
-    .map((tag) => tag.trim())
-    .filter(Boolean),
-);
+const parsedTags = computed(() => parseTagsInput(tagsInput.value));
 
 const previewNote = computed<Note>(() => ({
   id: props.initialNote?.id ?? "preview",
@@ -75,6 +74,34 @@ function saveCard() {
   );
 }
 
+function handlePageKeydown(event: KeyboardEvent) {
+  if (!props.active || event.defaultPrevented || event.isComposing) {
+    return;
+  }
+
+  if (event.ctrlKey && event.key === "Enter") {
+    event.preventDefault();
+    saveCard();
+    return;
+  }
+
+  if (event.key === "Escape" && !tagSuggestionsOpen.value) {
+    event.preventDefault();
+    emit("cancel");
+  }
+}
+
+function parseTagsInput(value: string) {
+  return value
+    .split(/(?=#)|[,，\s]+/)
+    .map((tag) => tag.trim().replace(/^#+/, "").trim())
+    .filter(Boolean);
+}
+
+function formatTagsInput(tags: string[]) {
+  return tags.map((tag) => `#${tag}`).join(" ");
+}
+
 watch(
   () => [props.mode, props.initialNote, props.initialTitle, props.draftKey] as const,
   ([mode, note, initialTitle]) => {
@@ -82,14 +109,22 @@ watch(
     tone.value = note?.tone ?? "sage";
     title.value = mode === "edit" ? (note?.title ?? "") : initialTitle;
     excerpt.value = note?.excerpt ?? "";
-    tagsInput.value = note?.tags.join(", ") ?? "";
+    tagsInput.value = note ? formatTagsInput(note.tags) : "";
   },
   { immediate: true },
 );
+
+onMounted(() => {
+  window.addEventListener("keydown", handlePageKeydown, true);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", handlePageKeydown, true);
+});
 </script>
 
 <template>
-  <main class="new-card-shell">
+  <main class="new-card-shell" @keydown.capture="handlePageKeydown">
     <div class="new-card-toolbar" aria-label="新建卡片操作">
       <button type="button" class="back-button" @click="$emit('cancel')">
         <ArrowLeft aria-hidden="true" />
@@ -137,7 +172,11 @@ watch(
         <div class="split-row">
           <label class="field-group">
             <span class="field-label">标签</span>
-            <input v-model="tagsInput" type="text" placeholder="逗号分隔" />
+            <TagSuggestInput
+              v-model="tagsInput"
+              placeholder="#标签"
+              @suggestion-open-change="tagSuggestionsOpen = $event"
+            />
           </label>
 
           <section class="field-group accent-group" aria-labelledby="tone-label">

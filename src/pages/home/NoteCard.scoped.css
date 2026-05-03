@@ -114,6 +114,10 @@
   line-height: 1.45;
 }
 
+.note-card--untitled .note-excerpt {
+  margin-top: 10px;
+}
+
 .note-excerpt p {
   margin: 0;
   white-space: pre-wrap;

@@ -5,7 +5,7 @@ mod store;
 use crate::app::{
     bootstrap::setup_app,
     commands::{
-        create_note, delete_note, find_note_by_title, list_notes_page, search_notes, update_note,
+        create_note, delete_note, find_note_by_title, list_notes_page, list_tags, search_notes, update_note,
     },
     platform::handle_window_event,
     state::{AppQuitState, HotkeyShutdown},
@@ -23,6 +23,7 @@ pub fn run() {
             list_notes_page,
             search_notes,
             find_note_by_title,
+            list_tags,
             create_note,
             update_note,
             delete_note

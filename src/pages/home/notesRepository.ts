@@ -53,6 +53,10 @@ export async function findNoteByTitle(title: string): Promise<Note | null> {
   return note ? mapBackendNote(note) : null;
 }
 
+export async function listTags(prefix: string, limit = 8): Promise<string[]> {
+  return invoke<string[]>("list_tags", { limit, prefix });
+}
+
 export async function createNote(input: NoteInput): Promise<Note> {
   return mapBackendNote(await invoke<BackendNote>("create_note", { input }));
 }

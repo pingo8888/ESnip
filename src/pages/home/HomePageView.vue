@@ -4,9 +4,11 @@ import { Plus, Search, Settings, X } from "lucide-vue-next";
 import NoteCard from "./NoteCard.vue";
 import NoteContextMenu from "./NoteContextMenu.vue";
 import type { Note } from "./noteTypes";
+import TagSuggestInput from "../shared/TagSuggestInput.vue";
 
 const props = defineProps<{
   masonryColumns: Note[][];
+  resultCount: number;
   searchQuery: string;
 }>();
 
@@ -24,7 +26,7 @@ const contextMenu = ref<{
   x: number;
   y: number;
 } | null>(null);
-const sectionTitle = computed(() => (props.searchQuery.trim() ? "搜索结果" : "最近添加"));
+const sectionTitle = computed(() => (props.searchQuery.trim() ? `${props.resultCount}条 搜索结果` : `${props.resultCount}张 摘录卡片`));
 
 function openContextMenu(event: MouseEvent, note: Note) {
   const menuWidth = 198;
@@ -74,10 +76,6 @@ function clearSearch() {
   emit("updateSearchQuery", "");
 }
 
-function updateSearchQuery(event: Event) {
-  emit("updateSearchQuery", (event.target as HTMLInputElement).value);
-}
-
 onMounted(() => {
   window.addEventListener("pointerdown", handleGlobalPointerDown);
   window.addEventListener("keydown", handleGlobalKeyDown);
@@ -107,11 +105,11 @@ onUnmounted(() => {
         <span class="search-icon">
           <Search aria-hidden="true" />
         </span>
-        <input
-          :value="searchQuery"
+        <TagSuggestInput
+          :model-value="searchQuery"
           type="search"
           placeholder="搜索你的摘录..."
-          @input="updateSearchQuery"
+          @update:model-value="emit('updateSearchQuery', $event)"
         />
         <button
           v-if="searchQuery"

@@ -163,6 +163,7 @@
 }
 
 input,
+.field-group :deep(.tag-suggest-input > input),
 textarea {
   user-select: text;
   width: 100%;
@@ -174,7 +175,8 @@ textarea {
   font-size: 1rem;
 }
 
-input {
+input,
+.field-group :deep(.tag-suggest-input) {
   height: 50px;
 }
 
@@ -186,11 +188,13 @@ textarea {
 }
 
 input::placeholder,
+.field-group :deep(.tag-suggest-input > input::placeholder),
 textarea::placeholder {
   color: #8f857a;
 }
 
 input:focus,
+.field-group :deep(.tag-suggest-input > input:focus),
 textarea:focus {
   border-color: rgba(117, 128, 111, 0.72);
   box-shadow: 0 12px 32px rgba(54, 46, 38, 0.07);

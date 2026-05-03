@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { ArrowLeft, ChevronDown, Settings } from "lucide-vue-next";
 import NoteCard from "../home/NoteCard.vue";
 import type { Note, NoteKind } from "../home/noteTypes";
@@ -26,7 +26,7 @@ const cardSpacing = ref(14);
 const savePath = ref("~/Documents/ESnip");
 const shortcutKeys = ["Alt", "Space"];
 
-defineEmits<{
+const emit = defineEmits<{
   back: [];
 }>();
 
@@ -105,6 +105,29 @@ function selectTheme(value: string) {
   theme.value = value;
   openSelect.value = null;
 }
+
+function handleSettingsKeydown(event: KeyboardEvent) {
+  if (event.defaultPrevented || event.isComposing || event.key !== "Escape") {
+    return;
+  }
+
+  event.preventDefault();
+
+  if (openSelect.value) {
+    openSelect.value = null;
+    return;
+  }
+
+  emit("back");
+}
+
+onMounted(() => {
+  window.addEventListener("keydown", handleSettingsKeydown, true);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", handleSettingsKeydown, true);
+});
 </script>
 
 <template>

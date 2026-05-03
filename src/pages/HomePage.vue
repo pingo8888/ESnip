@@ -232,6 +232,7 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
     <HomePageView
       v-show="activePage === 'home'"
       :masonry-columns="masonryColumns"
+      :result-count="notes.length"
       :search-query="searchQuery"
       @create-note="showNewCardPage"
       @delete-note="requestDeleteNote"
@@ -244,6 +245,7 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
       v-if="activePage === 'new-card' || settingsReturnPage === 'new-card'"
       v-show="activePage === 'new-card'"
       :draft-key="newCardDraftKey"
+      :active="activePage === 'new-card'"
       :initial-title="newCardInitialTitle"
       mode="create"
       @cancel="showHomePage"
@@ -254,6 +256,7 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
       v-if="(activePage === 'edit-card' || settingsReturnPage === 'edit-card') && editingNote"
       v-show="activePage === 'edit-card'"
       mode="edit"
+      :active="activePage === 'edit-card'"
       :initial-note="editingNote"
       @cancel="showHomePage"
       @open-settings="showSettingsPage"
