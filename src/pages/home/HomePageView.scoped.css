@@ -82,7 +82,7 @@
 
 .search-box {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr auto auto;
   align-items: center;
   width: min(636px, 100%);
   height: 54px;
@@ -131,6 +131,34 @@
 
 .search-box input::placeholder {
   color: #81786f;
+}
+
+.search-box input::-webkit-search-cancel-button,
+.search-box input::-webkit-search-decoration {
+  appearance: none;
+}
+
+.search-clear {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  color: #82786c;
+  background: transparent;
+  cursor: default;
+}
+
+.search-clear:hover {
+  color: #2f2b25;
+  background: rgba(99, 87, 74, 0.08);
+}
+
+.search-clear svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 1.85;
 }
 
 kbd {

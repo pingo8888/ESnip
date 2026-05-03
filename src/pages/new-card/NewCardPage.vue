@@ -26,6 +26,7 @@ const tagsInput = ref("");
 
 const emit = defineEmits<{
   cancel: [];
+  openSettings: [];
   save: [note: Note];
 }>();
 
@@ -76,7 +77,7 @@ watch(
         <span>返回</span>
       </button>
 
-      <button type="button" class="icon-button" aria-label="设置" title="设置">
+      <button type="button" class="icon-button" aria-label="设置" title="设置" @click="$emit('openSettings')">
         <Settings aria-hidden="true" />
       </button>
     </div>

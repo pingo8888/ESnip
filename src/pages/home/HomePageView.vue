@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
-import { Plus, Search, Settings } from "lucide-vue-next";
+import { Plus, Search, Settings, X } from "lucide-vue-next";
 import NoteCard from "./NoteCard.vue";
 import NoteContextMenu from "./NoteContextMenu.vue";
 import type { Note } from "./notes.fixture";
@@ -14,6 +14,7 @@ const emit = defineEmits<{
   deleteNote: [note: Note];
   editNote: [note: Note];
   notesScrollReady: [el: HTMLElement | null];
+  openSettings: [];
 }>();
 
 const contextMenu = ref<{
@@ -21,6 +22,7 @@ const contextMenu = ref<{
   x: number;
   y: number;
 } | null>(null);
+const searchQuery = ref("");
 
 function openContextMenu(event: MouseEvent, note: Note) {
   const menuWidth = 198;
@@ -66,6 +68,10 @@ function handleGlobalKeyDown(event: KeyboardEvent) {
   }
 }
 
+function clearSearch() {
+  searchQuery.value = "";
+}
+
 onMounted(() => {
   window.addEventListener("pointerdown", handleGlobalPointerDown);
   window.addEventListener("keydown", handleGlobalKeyDown);
@@ -84,7 +90,7 @@ onUnmounted(() => {
         <button type="button" aria-label="添加词条" title="添加词条" @click="$emit('createNote')">
           <Plus aria-hidden="true" />
         </button>
-        <button type="button" aria-label="设置" title="设置">
+        <button type="button" aria-label="设置" title="设置" @click="$emit('openSettings')">
           <Settings aria-hidden="true" />
         </button>
       </div>
@@ -95,7 +101,17 @@ onUnmounted(() => {
         <span class="search-icon">
           <Search aria-hidden="true" />
         </span>
-        <input type="search" placeholder="搜索你的摘录..." />
+        <input v-model="searchQuery" type="search" placeholder="搜索你的摘录..." />
+        <button
+          v-if="searchQuery"
+          type="button"
+          class="search-clear"
+          aria-label="清空搜索"
+          title="清空搜索"
+          @click="clearSearch"
+        >
+          <X aria-hidden="true" />
+        </button>
         <kbd>Enter</kbd>
       </label>
     </header>

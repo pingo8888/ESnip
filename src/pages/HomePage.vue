@@ -7,10 +7,13 @@ import HomePageView from "./home/HomePageView.vue";
 import { testNotes, type Note } from "./home/notes.fixture";
 import { useNoteCollection } from "./home/useNoteCollection";
 import NewCardPage from "./new-card/NewCardPage.vue";
+import SettingsPage from "./settings/SettingsPage.vue";
 
-type ActivePage = "home" | "new-card" | "edit-card";
+type WorkPage = "home" | "new-card" | "edit-card";
+type ActivePage = WorkPage | "settings";
 
 const activePage = ref<ActivePage>("home");
+const settingsReturnPage = ref<WorkPage | null>(null);
 const { notes, addNote, deleteNote, updateNote } = useNoteCollection(testNotes);
 const editingNote = ref<Note | null>(null);
 const deletingNote = ref<Note | null>(null);
@@ -86,6 +89,19 @@ function showNewCardPage() {
 function showHomePage() {
   editingNote.value = null;
   activePage.value = "home";
+}
+
+function showSettingsPage() {
+  if (activePage.value !== "settings") {
+    settingsReturnPage.value = activePage.value;
+  }
+
+  activePage.value = "settings";
+}
+
+function returnFromSettings() {
+  activePage.value = settingsReturnPage.value ?? "home";
+  settingsReturnPage.value = null;
 }
 
 function showEditCardPage(note: Note) {
@@ -167,21 +183,33 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
     @toggle-maximize-window="toggleMaximizeWindow"
   >
     <HomePageView
-      v-if="activePage === 'home'"
+      v-show="activePage === 'home'"
       :masonry-columns="masonryColumns"
       @create-note="showNewCardPage"
       @delete-note="requestDeleteNote"
       @edit-note="showEditCardPage"
       @notes-scroll-ready="setNotesScrollElement"
+      @open-settings="showSettingsPage"
     />
-    <NewCardPage v-else-if="activePage === 'new-card'" mode="create" @cancel="showHomePage" @save="saveNewNote" />
     <NewCardPage
-      v-else
+      v-if="activePage === 'new-card' || settingsReturnPage === 'new-card'"
+      v-show="activePage === 'new-card'"
+      mode="create"
+      @cancel="showHomePage"
+      @open-settings="showSettingsPage"
+      @save="saveNewNote"
+    />
+    <NewCardPage
+      v-if="(activePage === 'edit-card' || settingsReturnPage === 'edit-card') && editingNote"
+      v-show="activePage === 'edit-card'"
       mode="edit"
       :initial-note="editingNote"
       @cancel="showHomePage"
+      @open-settings="showSettingsPage"
       @save="saveEditedNote"
     />
+
+    <SettingsPage v-if="activePage === 'settings'" @back="returnFromSettings" />
 
     <DeleteNoteConfirm
       v-if="deletingNote"
