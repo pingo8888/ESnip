@@ -1,4 +1,4 @@
-export type NoteKind = "词语" | "句子" | "段落" | "灵感";
+export type NoteKind = "词语" | "句子" | "段落";
 
 export type NoteTone = "sage" | "ochre" | "clay" | "ink";
 
@@ -110,7 +110,7 @@ export const testNotes: Note[] = [
       "如果卡片太像表格，用户会开始扫描而不是阅读；如果卡片太像文章，列表又会失去效率。现在这个界面更接近案头纸片，所以可以保留一点不齐整的高度差。关键不是每列完全对齐，而是让眼睛能快速找到标题、类型、时间和正文开头。短卡片应该像便签，长卡片应该像折起来的段落。两者混在一起时，页面才有真实笔记库的质感。",
     time: "12 天前",
     tags: ["灵感", "设计"],
-    kind: "灵感",
+    kind: "段落",
     tone: "ink",
   },
   {
@@ -127,7 +127,7 @@ export const testNotes: Note[] = [
     excerpt: "让短摘录保持短。密度比整齐更重要。",
     time: "2 天前",
     tags: ["界面"],
-    kind: "灵感",
+    kind: "句子",
     tone: "ochre",
   },
   {
@@ -171,7 +171,7 @@ export const testNotes: Note[] = [
     excerpt: "窗口控制和应用操作不是同一层级。前者是壳，后者是内容工具。",
     time: "5 天前",
     tags: ["界面", "结构"],
-    kind: "灵感",
+    kind: "段落",
     tone: "ink",
   },
   {
@@ -216,7 +216,7 @@ export const testNotes: Note[] = [
     excerpt: "一像按钮，阅读感就没了。",
     time: "1 周前",
     tags: ["设计"],
-    kind: "灵感",
+    kind: "句子",
     tone: "sage",
   },
   {
@@ -261,7 +261,7 @@ export const testNotes: Note[] = [
     title: "空格也是信息",
     time: "8 天前",
     tags: ["设计"],
-    kind: "灵感",
+    kind: "句子",
     tone: "ochre",
   },
   {
@@ -311,7 +311,7 @@ export const testNotes: Note[] = [
     id: "untitled-empty-1",
     time: "刚刚",
     tags: ["空卡"],
-    kind: "灵感",
+    kind: "句子",
     tone: "ink",
   },
   {

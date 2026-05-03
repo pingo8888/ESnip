@@ -12,10 +12,10 @@
   "app": {
     "windows": [
       {
-        "title": "简摘 ESnip",
+        "title": "ESnip",
         "decorations": false,
-        "width": 800,
-        "height": 600
+        "width": 768,
+        "height": 1080
       }
     ],
     "security": {

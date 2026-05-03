@@ -1,16 +1,9 @@
 <script setup lang="ts">
 import { Minus, Square, X } from "lucide-vue-next";
-import HomePageView from "./HomePageView.vue";
-import type { Note } from "./notes.fixture";
-
-defineProps<{
-  masonryColumns: Note[][];
-}>();
 
 defineEmits<{
   closeWindow: [];
   minimizeWindow: [];
-  notesScrollReady: [el: HTMLElement | null];
   titlebarMouseDown: [event: MouseEvent];
   toggleMaximizeWindow: [];
 }>();
@@ -36,7 +29,7 @@ defineEmits<{
       </div>
     </header>
 
-    <HomePageView :masonry-columns="masonryColumns" @notes-scroll-ready="$emit('notesScrollReady', $event)" />
+    <slot />
   </div>
 </template>
 

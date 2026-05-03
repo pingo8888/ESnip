@@ -1,9 +1,19 @@
 <script setup lang="ts">
 import { computed, nextTick, onUnmounted, ref } from "vue";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import DeleteNoteConfirm from "./home/DeleteNoteConfirm.vue";
 import HomeShellView from "./home/HomeShellView.vue";
+import HomePageView from "./home/HomePageView.vue";
 import { testNotes, type Note } from "./home/notes.fixture";
+import { useNoteCollection } from "./home/useNoteCollection";
+import NewCardPage from "./new-card/NewCardPage.vue";
 
+type ActivePage = "home" | "new-card" | "edit-card";
+
+const activePage = ref<ActivePage>("home");
+const { notes, addNote, deleteNote, updateNote } = useNoteCollection(testNotes);
+const editingNote = ref<Note | null>(null);
+const deletingNote = ref<Note | null>(null);
 const notesScrollEl = ref<HTMLElement | null>(null);
 const notesScrollWidth = ref(0);
 let resizeObserver: ResizeObserver | undefined;
@@ -25,7 +35,7 @@ const masonryColumns = computed(() => {
   const columns = Array.from({ length: columnCount.value }, () => [] as Note[]);
   const columnHeights = Array.from({ length: columnCount.value }, () => 0);
 
-  for (const note of testNotes) {
+  for (const note of notes.value) {
     const shortestColumnIndex = columnHeights.indexOf(Math.min(...columnHeights));
 
     columns[shortestColumnIndex].push(note);
@@ -37,7 +47,9 @@ const masonryColumns = computed(() => {
 
 function estimateNoteHeight(note: Note) {
   const titleLines = note.title ? Math.ceil(note.title.length / 14) : 0;
-  const excerptLines = note.excerpt ? Math.ceil(note.excerpt.length / 42) : 0;
+  const excerptLines = note.excerpt
+    ? note.excerpt.split(/\r?\n/).reduce((total, paragraph) => total + Math.max(1, Math.ceil(paragraph.length / 42)), 0)
+    : 0;
   const tagLines = Math.ceil(note.tags.join("").length / 12);
 
   return 78 + titleLines * 24 + excerptLines * 21 + tagLines * 18;
@@ -64,6 +76,55 @@ function setNotesScrollElement(el: HTMLElement | null) {
 
 function updateNotesScrollWidth() {
   notesScrollWidth.value = notesScrollEl.value?.clientWidth ?? 0;
+}
+
+function showNewCardPage() {
+  editingNote.value = null;
+  activePage.value = "new-card";
+}
+
+function showHomePage() {
+  editingNote.value = null;
+  activePage.value = "home";
+}
+
+function showEditCardPage(note: Note) {
+  editingNote.value = note;
+  activePage.value = "edit-card";
+}
+
+function saveNewNote(note: Note) {
+  addNote(note);
+  activePage.value = "home";
+
+  void nextTick(updateNotesScrollWidth);
+}
+
+function saveEditedNote(note: Note) {
+  updateNote(note);
+  editingNote.value = null;
+  activePage.value = "home";
+
+  void nextTick(updateNotesScrollWidth);
+}
+
+function requestDeleteNote(note: Note) {
+  deletingNote.value = note;
+}
+
+function cancelDeleteNote() {
+  deletingNote.value = null;
+}
+
+function confirmDeleteNote() {
+  if (!deletingNote.value) {
+    return;
+  }
+
+  deleteNote(deletingNote.value.id);
+  deletingNote.value = null;
+
+  void nextTick(updateNotesScrollWidth);
 }
 
 onUnmounted(() => {
@@ -100,11 +161,33 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
 
 <template>
   <HomeShellView
-    :masonry-columns="masonryColumns"
     @close-window="closeWindow"
     @minimize-window="minimizeWindow"
-    @notes-scroll-ready="setNotesScrollElement"
     @titlebar-mouse-down="handleTitlebarMouseDown"
     @toggle-maximize-window="toggleMaximizeWindow"
-  />
+  >
+    <HomePageView
+      v-if="activePage === 'home'"
+      :masonry-columns="masonryColumns"
+      @create-note="showNewCardPage"
+      @delete-note="requestDeleteNote"
+      @edit-note="showEditCardPage"
+      @notes-scroll-ready="setNotesScrollElement"
+    />
+    <NewCardPage v-else-if="activePage === 'new-card'" mode="create" @cancel="showHomePage" @save="saveNewNote" />
+    <NewCardPage
+      v-else
+      mode="edit"
+      :initial-note="editingNote"
+      @cancel="showHomePage"
+      @save="saveEditedNote"
+    />
+
+    <DeleteNoteConfirm
+      v-if="deletingNote"
+      :note="deletingNote"
+      @cancel="cancelDeleteNote"
+      @confirm="confirmDeleteNote"
+    />
+  </HomeShellView>
 </template>
