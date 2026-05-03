@@ -1,7 +1,96 @@
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
+.window-frame {
+  --titlebar-height: 34px;
+
+  display: grid;
+  height: 100vh;
+  max-height: 100vh;
+  grid-template-rows: var(--titlebar-height) minmax(0, 1fr);
+  overflow: hidden;
+  user-select: none;
 }
 
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #249b73);
+.window-titlebar {
+  position: relative;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  width: 100%;
+  height: var(--titlebar-height);
+  border-bottom: 1px solid rgba(225, 216, 202, 0.72);
+  background: rgba(243, 238, 229, 0.82);
+  backdrop-filter: blur(18px);
+}
+
+.window-drag-zone {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  min-width: 0;
+  padding-left: 14px;
+}
+
+.window-app-name {
+  color: #5c5349;
+  font-size: 0.98rem;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+
+.window-controls {
+  display: grid;
+  grid-column: 2;
+  justify-self: end;
+  height: 100%;
+  grid-template-columns: repeat(3, 40px);
+  align-items: stretch;
+}
+
+.window-controls button {
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  color: #6d6258;
+  background: transparent;
+  cursor: default;
+  line-height: 1;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease;
+}
+
+.window-controls svg {
+  width: 14px;
+  height: 14px;
+  overflow: visible;
+  stroke-width: 1.8;
+}
+
+.window-controls button:hover {
+  color: #2f2b25;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.window-controls button:active {
+  background: rgba(214, 202, 185, 0.48);
+}
+
+.window-controls .window-close:hover {
+  color: #fffaf2;
+  background: #b85f49;
+}
+
+@media (max-width: 620px) {
+  .window-frame {
+    --titlebar-height: 32px;
+  }
+
+  .window-titlebar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .window-controls {
+    grid-template-columns: repeat(3, 34px);
+  }
 }
