@@ -120,6 +120,7 @@
 
 .note-excerpt p {
   margin: 0;
+  text-align: justify;
   white-space: pre-wrap;
 }
 

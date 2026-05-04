@@ -28,6 +28,14 @@ pub(crate) struct AppSettings {
     data_dir: String,
     #[serde(default)]
     hotkeys: HotkeySettings,
+    #[serde(default)]
+    window_x: Option<i32>,
+    #[serde(default)]
+    window_y: Option<i32>,
+    #[serde(default)]
+    window_width: Option<u32>,
+    #[serde(default)]
+    window_height: Option<u32>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -47,6 +55,10 @@ impl Default for AppSettings {
             locale: default_locale(),
             data_dir: String::new(),
             hotkeys: HotkeySettings::default(),
+            window_x: None,
+            window_y: None,
+            window_width: None,
+            window_height: None,
         }
     }
 }
@@ -117,6 +129,49 @@ pub(crate) fn update_data_dir<R: Runtime>(
     update_app_settings(app, settings)
 }
 
+pub(crate) fn save_window_state<R: Runtime>(
+    app: &AppHandle<R>,
+    x: i32,
+    y: i32,
+    width: u32,
+    height: u32,
+) -> Result<(), String> {
+    let mut settings = get_app_settings(app)?;
+
+    if settings.window_x == Some(x)
+        && settings.window_y == Some(y)
+        && settings.window_width == Some(width)
+        && settings.window_height == Some(height)
+    {
+        return Ok(());
+    }
+
+    settings.window_x = Some(x);
+    settings.window_y = Some(y);
+    settings.window_width = Some(width);
+    settings.window_height = Some(height);
+    update_app_settings(app, settings)?;
+    Ok(())
+}
+
+pub(crate) fn apply_saved_window_state<R: Runtime>(app: &AppHandle<R>) {
+    let settings = match get_app_settings(app) {
+        Ok(s) => s,
+        Err(_) => return,
+    };
+
+    let Some(window) = app.get_webview_window("main") else {
+        return;
+    };
+
+    if let (Some(x), Some(y)) = (settings.window_x, settings.window_y) {
+        let _ = window.set_position(tauri::PhysicalPosition::new(x, y));
+    }
+    if let (Some(width), Some(height)) = (settings.window_width, settings.window_height) {
+        let _ = window.set_size(tauri::PhysicalSize::new(width, height));
+    }
+}
+
 pub(crate) fn hotkey_virtual_key(hotkey: &str, default_hotkey: &str) -> u32 {
     parse_hotkey(hotkey)
         .or_else(|| parse_hotkey(default_hotkey))
@@ -169,6 +224,10 @@ fn normalize_settings<R: Runtime>(
         } else {
             hotkeys
         },
+        window_x: settings.window_x,
+        window_y: settings.window_y,
+        window_width: settings.window_width,
+        window_height: settings.window_height,
     })
 }
 

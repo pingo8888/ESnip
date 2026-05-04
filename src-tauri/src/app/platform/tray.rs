@@ -1,6 +1,9 @@
 use tauri::Manager;
 
-use crate::app::state::{AppQuitState, HotkeyShutdown};
+use crate::{
+    app::state::{AppQuitState, HotkeyShutdown},
+    store::settings::save_window_state,
+};
 
 const TRAY_SHOW_ID: &str = "tray-show";
 const TRAY_QUIT_ID: &str = "tray-quit";
@@ -82,8 +85,22 @@ pub(crate) fn handle_window_event<R: tauri::Runtime>(
         }
 
         api.prevent_close();
+        persist_window_state(window.app_handle());
         let _ = window.hide();
     }
+}
+
+fn persist_window_state<R: tauri::Runtime>(handle: &tauri::AppHandle<R>) {
+    let Some(webview) = handle.get_webview_window("main") else {
+        return;
+    };
+    let Ok(position) = webview.outer_position() else {
+        return;
+    };
+    let Ok(size) = webview.outer_size() else {
+        return;
+    };
+    let _ = save_window_state(handle, position.x, position.y, size.width, size.height);
 }
 
 pub(crate) fn setup_tray_icon<R: tauri::Runtime>(app: &mut tauri::App<R>) -> tauri::Result<()> {
@@ -105,6 +122,7 @@ pub(crate) fn setup_tray_icon<R: tauri::Runtime>(app: &mut tauri::App<R>) -> tau
                 let _ = show_main_window(app);
             }
             TRAY_QUIT_ID => {
+                persist_window_state(app);
                 app.state::<HotkeyShutdown>().request_shutdown();
                 app.state::<AppQuitState>().request_quit();
                 app.exit(0);

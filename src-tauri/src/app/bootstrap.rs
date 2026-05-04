@@ -5,7 +5,10 @@ use crate::{
         platform::{setup_tray_icon, start_hotkey_listener},
         state::{DbState, HotkeyState},
     },
-    store::{notes::init_connection, settings::get_app_settings},
+    store::{
+        notes::init_connection,
+        settings::{apply_saved_window_state, get_app_settings},
+    },
 };
 
 pub(crate) fn setup_app<R: tauri::Runtime>(
@@ -37,6 +40,12 @@ where
     start_hotkey_listener(app.handle().clone());
     #[cfg(desktop)]
     setup_tray_icon(app)?;
+
+    apply_saved_window_state(app.handle());
+
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+    }
 
     Ok(())
 }
