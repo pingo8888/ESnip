@@ -21,6 +21,7 @@ const emit = defineEmits<{
 }>();
 
 const inputEl = ref<HTMLInputElement | null>(null);
+const listEl = ref<HTMLElement | null>(null);
 const suggestions = ref<string[]>([]);
 const highlightedIndex = ref(0);
 const activeToken = ref<{ start: number; end: number; prefix: string } | null>(null);
@@ -179,6 +180,16 @@ function closeSuggestions() {
   highlightedIndex.value = 0;
 }
 
+function scrollHighlightedIntoView() {
+  void nextTick(() => {
+    listEl.value?.querySelector(".is-active")?.scrollIntoView({ block: "nearest" });
+  });
+}
+
+watch(highlightedIndex, () => {
+  scrollHighlightedIntoView();
+});
+
 function findActiveTagToken(value: string, cursor: number) {
   const beforeCursor = value.slice(0, cursor);
   const tokenStart = Math.max(beforeCursor.lastIndexOf(" "), beforeCursor.lastIndexOf(","), beforeCursor.lastIndexOf("，")) + 1;
@@ -226,7 +237,7 @@ watch(isOpen, (value) => {
     />
 
     <div v-if="isOpen" class="tag-suggestions" role="listbox">
-      <div class="tag-suggestions-list">
+      <div ref="listEl" class="tag-suggestions-list">
         <button
           v-for="(tag, index) in suggestions"
           :key="tag"

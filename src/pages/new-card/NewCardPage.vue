@@ -30,6 +30,7 @@ const props = withDefaults(
 const noteKinds: NoteKind[] = ["词语", "句子", "段落"];
 const noteTones: NoteTone[] = ["sage", "ochre", "clay", "ink"];
 
+const titleInputRef = ref<HTMLInputElement | null>(null);
 const kind = ref<NoteKind>("词语");
 const tone = ref<NoteTone>("sage");
 const title = ref("");
@@ -122,6 +123,7 @@ watch(
 
 onMounted(() => {
   window.addEventListener("keydown", handlePageKeydown, true);
+  titleInputRef.value?.focus();
 });
 
 onUnmounted(() => {
@@ -167,7 +169,7 @@ onUnmounted(() => {
 
         <label class="field-group">
           <span class="field-label">{{ t("newCard.title") }}</span>
-          <input v-model="title" type="text" :placeholder="t('newCard.titlePlaceholder')" />
+          <input ref="titleInputRef" v-model="title" type="text" :placeholder="t('newCard.titlePlaceholder')" />
         </label>
 
         <label class="field-group">
