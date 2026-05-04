@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { Plus, Search, Settings, X } from "lucide-vue-next";
+import { useI18n } from "../../i18n";
 import NoteCard from "./NoteCard.vue";
 import NoteContextMenu from "./NoteContextMenu.vue";
 import type { Note } from "./noteTypes";
@@ -21,12 +22,17 @@ const emit = defineEmits<{
   updateSearchQuery: [query: string];
 }>();
 
+const { t } = useI18n();
 const contextMenu = ref<{
   note: Note;
   x: number;
   y: number;
 } | null>(null);
-const sectionTitle = computed(() => (props.searchQuery.trim() ? `${props.resultCount}条 搜索结果` : `${props.resultCount}张 摘录卡片`));
+const sectionTitle = computed(() =>
+  props.searchQuery.trim()
+    ? t("home.searchResults", { count: props.resultCount })
+    : t("home.cardsCount", { count: props.resultCount }),
+);
 
 function openContextMenu(event: MouseEvent, note: Note) {
   const menuWidth = 198;
@@ -89,34 +95,34 @@ onUnmounted(() => {
 
 <template>
   <main class="commonplace-shell">
-    <div class="app-toolbar" aria-label="应用操作">
+    <div class="app-toolbar" :aria-label="t('home.appActions')">
       <div class="app-actions">
-        <button type="button" aria-label="添加词条" title="添加词条" @click="$emit('createNote')">
+        <button type="button" :aria-label="t('home.addNote')" :title="t('home.addNote')" @click="$emit('createNote')">
           <Plus aria-hidden="true" />
         </button>
-        <button type="button" aria-label="设置" title="设置" @click="$emit('openSettings')">
+        <button type="button" :aria-label="t('common.settings')" :title="t('common.settings')" @click="$emit('openSettings')">
           <Settings aria-hidden="true" />
         </button>
       </div>
     </div>
 
     <header class="hero">
-      <label class="search-box" aria-label="搜索笔记">
+      <label class="search-box" :aria-label="t('home.searchAria')">
         <span class="search-icon">
           <Search aria-hidden="true" />
         </span>
         <TagSuggestInput
           :model-value="searchQuery"
           type="search"
-          placeholder="搜索你的摘录..."
+          :placeholder="t('home.searchPlaceholder')"
           @update:model-value="emit('updateSearchQuery', $event)"
         />
         <button
           v-if="searchQuery"
           type="button"
           class="search-clear"
-          aria-label="清空搜索"
-          title="清空搜索"
+          :aria-label="t('home.clearSearch')"
+          :title="t('home.clearSearch')"
           @click="clearSearch"
         >
           <X aria-hidden="true" />

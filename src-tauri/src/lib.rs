@@ -5,7 +5,8 @@ mod store;
 use crate::app::{
     bootstrap::setup_app,
     commands::{
-        create_note, delete_note, find_note_by_title, list_notes_page, list_tags, search_notes, update_note,
+        create_note, delete_note, find_note_by_title, get_app_settings, list_notes_page, list_tags, search_notes,
+        update_app_settings, update_note,
     },
     platform::handle_window_event,
     state::{AppQuitState, HotkeyShutdown},
@@ -26,7 +27,9 @@ pub fn run() {
             list_tags,
             create_note,
             update_note,
-            delete_note
+            delete_note,
+            get_app_settings,
+            update_app_settings
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from "../../i18n";
+
 defineProps<{
   x: number;
   y: number;
@@ -9,6 +11,8 @@ defineEmits<{
   delete: [];
   edit: [];
 }>();
+
+const { t } = useI18n();
 </script>
 
 <template>
@@ -16,12 +20,12 @@ defineEmits<{
     class="note-context-menu"
     :style="{ left: `${x}px`, top: `${y}px` }"
     role="menu"
-    aria-label="卡片菜单"
+    :aria-label="t('menu.card')"
     @pointerdown.stop
   >
-    <button type="button" role="menuitem" @click="$emit('edit')">编辑</button>
+    <button type="button" role="menuitem" @click="$emit('edit')">{{ t("common.edit") }}</button>
     <div class="menu-separator" aria-hidden="true"></div>
-    <button type="button" class="danger-item" role="menuitem" @click="$emit('delete')">删除...</button>
+    <button type="button" class="danger-item" role="menuitem" @click="$emit('delete')">{{ t("common.delete") }}...</button>
   </div>
 </template>
 

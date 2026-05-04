@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
+import { useI18n } from "../../i18n";
 import { listTags } from "../home/notesRepository";
 
 const props = withDefaults(
@@ -23,6 +24,7 @@ const inputEl = ref<HTMLInputElement | null>(null);
 const suggestions = ref<string[]>([]);
 const highlightedIndex = ref(0);
 const activeToken = ref<{ start: number; end: number; prefix: string } | null>(null);
+const { t } = useI18n();
 let requestSerial = 0;
 let suggestionTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -238,9 +240,9 @@ watch(isOpen, (value) => {
       </div>
 
       <div class="tag-suggestions-help" aria-hidden="true">
-        <span>↑ / ↓ 选择</span>
-        <span>Enter 确认</span>
-        <span>Esc 关闭</span>
+        <span>{{ t("tagSuggestions.select") }}</span>
+        <span>{{ t("tagSuggestions.confirm") }}</span>
+        <span>{{ t("tagSuggestions.close") }}</span>
       </div>
     </div>
   </div>

@@ -79,31 +79,6 @@ function mapBackendNote(note: BackendNote): Note {
     tags: note.tags,
     createdAt: note.createdAt,
     updatedAt: note.updatedAt,
-    time: formatRelativeTime(note.createdAt),
+    time: "",
   };
-}
-
-function formatRelativeTime(timestamp: number) {
-  const diffMs = Date.now() - timestamp;
-  const minute = 60 * 1000;
-  const hour = 60 * minute;
-  const day = 24 * hour;
-
-  if (diffMs < minute) {
-    return "刚刚";
-  }
-
-  if (diffMs < hour) {
-    return `${Math.floor(diffMs / minute)} 分钟前`;
-  }
-
-  if (diffMs < day) {
-    return `${Math.floor(diffMs / hour)} 小时前`;
-  }
-
-  if (diffMs < 2 * day) {
-    return "昨天";
-  }
-
-  return `${Math.floor(diffMs / day)} 天前`;
 }

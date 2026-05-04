@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { ArrowLeft, Settings } from "lucide-vue-next";
+import { useI18n } from "../../i18n";
 import NoteCard from "../home/NoteCard.vue";
 import type { Note, NoteInput, NoteKind, NoteTone, NoteUpdateInput } from "../home/noteTypes";
 import TagSuggestInput from "../shared/TagSuggestInput.vue";
@@ -33,6 +34,7 @@ const title = ref("");
 const excerpt = ref("");
 const tagsInput = ref("");
 const tagSuggestionsOpen = ref(false);
+const { t, translateNoteKind } = useI18n();
 
 const emit = defineEmits<{
   cancel: [];
@@ -40,7 +42,7 @@ const emit = defineEmits<{
   save: [note: NoteInput | NoteUpdateInput];
 }>();
 
-const pageTitle = computed(() => (props.mode === "edit" ? "编辑卡片" : "新建卡片"));
+const pageTitle = computed(() => (props.mode === "edit" ? t("newCard.editTitle") : t("newCard.createTitle")));
 
 const parsedTags = computed(() => parseTagsInput(tagsInput.value));
 
@@ -48,7 +50,7 @@ const previewNote = computed<Note>(() => ({
   id: props.initialNote?.id ?? "preview",
   title: title.value.trim() || undefined,
   excerpt: excerpt.value.trim() || undefined,
-  time: "刚刚",
+  time: t("time.justNow"),
   tags: parsedTags.value,
   kind: kind.value,
   tone: tone.value,
@@ -127,13 +129,13 @@ onUnmounted(() => {
 
 <template>
   <main class="new-card-shell" @keydown.capture="handlePageKeydown">
-    <div class="new-card-toolbar" aria-label="新建卡片操作">
+    <div class="new-card-toolbar" :aria-label="t('newCard.actions')">
       <button type="button" class="back-button" @click="$emit('cancel')">
         <ArrowLeft aria-hidden="true" />
-        <span>返回</span>
+        <span>{{ t("common.back") }}</span>
       </button>
 
-      <button type="button" class="icon-button" aria-label="设置" title="设置" @click="$emit('openSettings')">
+      <button type="button" class="icon-button" :aria-label="t('common.settings')" :title="t('common.settings')" @click="$emit('openSettings')">
         <Settings aria-hidden="true" />
       </button>
     </div>
@@ -146,7 +148,7 @@ onUnmounted(() => {
         </header>
 
         <section class="field-group" aria-labelledby="kind-label">
-          <div id="kind-label" class="field-label">类型</div>
+          <div id="kind-label" class="field-label">{{ t("newCard.kind") }}</div>
           <div class="kind-options">
             <button
               v-for="item in noteKinds"
@@ -155,41 +157,41 @@ onUnmounted(() => {
               :class="{ 'is-active': kind === item }"
               @click="kind = item"
             >
-              {{ item }}
+              {{ translateNoteKind(item) }}
             </button>
           </div>
-          <p class="field-help">选择摘录的形态，之后可以继续调整。</p>
+          <p class="field-help">{{ t("newCard.kindHelp") }}</p>
         </section>
 
         <label class="field-group">
-          <span class="field-label">标题</span>
-          <input v-model="title" type="text" placeholder="可以留空，也可以写一个短标题..." />
+          <span class="field-label">{{ t("newCard.title") }}</span>
+          <input v-model="title" type="text" :placeholder="t('newCard.titlePlaceholder')" />
         </label>
 
         <label class="field-group">
-          <span class="field-label">内容</span>
-          <textarea v-model="excerpt" rows="5" placeholder="写下定义、原句、段落，或只是一个尚未展开的想法。"></textarea>
+          <span class="field-label">{{ t("newCard.content") }}</span>
+          <textarea v-model="excerpt" rows="5" :placeholder="t('newCard.contentPlaceholder')"></textarea>
         </label>
 
         <div class="split-row">
           <label class="field-group">
-            <span class="field-label">标签</span>
+            <span class="field-label">{{ t("newCard.tags") }}</span>
             <TagSuggestInput
               v-model="tagsInput"
-              placeholder="#标签"
+              :placeholder="t('newCard.tagsPlaceholder')"
               @suggestion-open-change="tagSuggestionsOpen = $event"
             />
           </label>
 
           <section class="field-group accent-group" aria-labelledby="tone-label">
-            <div id="tone-label" class="field-label">色调</div>
+            <div id="tone-label" class="field-label">{{ t("newCard.accent") }}</div>
             <div class="tone-options">
               <button
                 v-for="item in noteTones"
                 :key="item"
                 type="button"
                 :class="[`tone-option--${item}`, { 'is-active': tone === item }]"
-                :aria-label="`选择 ${item} 色调`"
+                :aria-label="t('newCard.selectTone', { tone: item })"
                 @click="tone = item"
               ></button>
             </div>
@@ -197,14 +199,14 @@ onUnmounted(() => {
         </div>
 
         <section class="field-group preview-group" aria-labelledby="preview-label">
-          <div id="preview-label" class="field-label">预览</div>
+          <div id="preview-label" class="field-label">{{ t("newCard.preview") }}</div>
 
           <NoteCard :note="previewNote" />
         </section>
 
         <div class="form-actions">
-          <button type="button" class="secondary-action" @click="$emit('cancel')">取消</button>
-          <button type="submit" class="primary-action">保存卡片</button>
+          <button type="button" class="secondary-action" @click="$emit('cancel')">{{ t("newCard.cancel") }}</button>
+          <button type="submit" class="primary-action">{{ t("newCard.save") }}</button>
         </div>
       </form>
     </div>

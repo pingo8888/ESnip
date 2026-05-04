@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from "../../i18n";
 import type { Note } from "./noteTypes";
 
 defineProps<{
@@ -9,6 +10,8 @@ defineProps<{
 defineEmits<{
   openContextMenu: [event: MouseEvent, note: Note];
 }>();
+
+const { formatRelativeTime, translateNoteKind } = useI18n();
 
 function splitParagraphs(value: string) {
   return value.split(/\r?\n/);
@@ -24,8 +27,8 @@ function splitParagraphs(value: string) {
     <div class="note-accent" aria-hidden="true"></div>
 
     <div class="note-meta">
-      <span class="note-kind">{{ note.kind }}</span>
-      <time>{{ note.time }}</time>
+      <span class="note-kind">{{ translateNoteKind(note.kind) }}</span>
+      <time>{{ formatRelativeTime(note.createdAt) }}</time>
     </div>
 
     <h3 v-if="note.title">{{ note.title }}</h3>

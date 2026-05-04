@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref } from "vue";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { initI18n } from "../i18n";
 import DeleteNoteConfirm from "./home/DeleteNoteConfirm.vue";
 import HomeShellView from "./home/HomeShellView.vue";
 import HomePageView from "./home/HomePageView.vue";
@@ -192,6 +193,7 @@ async function confirmDeleteNote() {
 }
 
 onMounted(() => {
+  void initI18n();
   void loadInitialNotes();
   void listen<QuickCapturePayload>("quick-capture", (event) => {
     void handleQuickCapture(event.payload);
