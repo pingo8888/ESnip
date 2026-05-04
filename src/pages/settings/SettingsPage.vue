@@ -24,7 +24,8 @@ const defaultKind = ref<NoteKind>("词语");
 const cardWidth = ref(210);
 const cardSpacing = ref(14);
 const savePath = ref("~/Documents/ESnip");
-const shortcutKeys = ["Alt", "Space"];
+const shortcutKeysTitle = ["Alt", "W"];
+const shortcutKeysContent = ["Alt", "S"];
 
 const emit = defineEmits<{
   back: [];
@@ -305,12 +306,24 @@ onUnmounted(() => {
 
           <div v-else-if="activeTab === 'shortcuts'" class="settings-panel">
             <section class="setting-row">
-              <span class="setting-title">桌面取词快捷键</span>
+              <span class="setting-title">桌面取词快捷键（填入标题）</span>
               <span class="setting-description">
-                在桌面任意位置唤起一个小取词窗口，粘贴或输入词语后在摘录库里查找。
+                在桌面任意位置选中文字后按 Alt+W，将选中文字作为标题新建卡片。
               </span>
               <span class="shortcut-row">
-                <kbd v-for="key in shortcutKeys" :key="key">{{ key }}</kbd>
+                <kbd v-for="key in shortcutKeysTitle" :key="key">{{ key }}</kbd>
+                <button type="button">更改...</button>
+                <button type="button">重置</button>
+              </span>
+            </section>
+
+            <section class="setting-row">
+              <span class="setting-title">桌面取词快捷键（填入内容）</span>
+              <span class="setting-description">
+                在桌面任意位置选中文字后按 Alt+S，将选中文字作为内容新建卡片。
+              </span>
+              <span class="shortcut-row">
+                <kbd v-for="key in shortcutKeysContent" :key="key">{{ key }}</kbd>
                 <button type="button">更改...</button>
                 <button type="button">重置</button>
               </span>

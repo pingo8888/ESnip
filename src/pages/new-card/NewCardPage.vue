@@ -11,6 +11,7 @@ const props = withDefaults(
     active?: boolean;
     initialNote?: Note | null;
     initialTitle?: string;
+    initialContent?: string;
     mode?: "create" | "edit";
   }>(),
   {
@@ -18,6 +19,7 @@ const props = withDefaults(
     active: true,
     initialNote: null,
     initialTitle: "",
+    initialContent: "",
     mode: "create",
   },
 );
@@ -103,12 +105,12 @@ function formatTagsInput(tags: string[]) {
 }
 
 watch(
-  () => [props.mode, props.initialNote, props.initialTitle, props.draftKey] as const,
-  ([mode, note, initialTitle]) => {
+  () => [props.mode, props.initialNote, props.initialTitle, props.initialContent, props.draftKey] as const,
+  ([mode, note, initialTitle, initialContent]) => {
     kind.value = note?.kind ?? "词语";
     tone.value = note?.tone ?? "sage";
     title.value = mode === "edit" ? (note?.title ?? "") : initialTitle;
-    excerpt.value = note?.excerpt ?? "";
+    excerpt.value = mode === "edit" ? (note?.excerpt ?? "") : initialContent;
     tagsInput.value = note ? formatTagsInput(note.tags) : "";
   },
   { immediate: true },

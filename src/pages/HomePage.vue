@@ -17,6 +17,9 @@ type ActivePage = WorkPage | "settings";
 type QuickCapturePayload = {
   title?: string | null;
 };
+type QuickCaptureContentPayload = {
+  content?: string | null;
+};
 
 const activePage = ref<ActivePage>("home");
 const settingsReturnPage = ref<WorkPage | null>(null);
@@ -24,11 +27,13 @@ const { notes, addNote, deleteNote, loadInitialNotes, searchQuery, setSearchQuer
 const editingNote = ref<Note | null>(null);
 const deletingNote = ref<Note | null>(null);
 const newCardInitialTitle = ref("");
+const newCardInitialContent = ref("");
 const newCardDraftKey = ref(0);
 const notesScrollEl = ref<HTMLElement | null>(null);
 const notesScrollWidth = ref(0);
 let resizeObserver: ResizeObserver | undefined;
 let unlistenQuickCapture: UnlistenFn | undefined;
+let unlistenQuickCaptureContent: UnlistenFn | undefined;
 
 const columnCount = computed(() => {
   const width = notesScrollWidth.value;
@@ -90,9 +95,10 @@ function updateNotesScrollWidth() {
   notesScrollWidth.value = notesScrollEl.value?.clientWidth ?? 0;
 }
 
-function showNewCardPage(initialTitle = "") {
+function showNewCardPage(initialTitle = "", initialContent = "") {
   editingNote.value = null;
   newCardInitialTitle.value = initialTitle;
+  newCardInitialContent.value = initialContent;
   newCardDraftKey.value += 1;
   activePage.value = "new-card";
 }
@@ -142,6 +148,11 @@ async function handleQuickCapture(payload: QuickCapturePayload) {
   showNewCardPage(title);
 }
 
+function handleQuickCaptureContent(payload: QuickCaptureContentPayload) {
+  const content = payload.content?.trim() ?? "";
+  showNewCardPage("", content);
+}
+
 async function saveNewNote(note: NoteInput) {
   await addNote(note);
   activePage.value = "home";
@@ -187,11 +198,17 @@ onMounted(() => {
   }).then((unlisten) => {
     unlistenQuickCapture = unlisten;
   });
+  void listen<QuickCaptureContentPayload>("quick-capture-content", (event) => {
+    handleQuickCaptureContent(event.payload);
+  }).then((unlisten) => {
+    unlistenQuickCaptureContent = unlisten;
+  });
 });
 
 onUnmounted(() => {
   resizeObserver?.disconnect();
   unlistenQuickCapture?.();
+  unlistenQuickCaptureContent?.();
 });
 
 async function minimizeWindow() {
@@ -247,6 +264,7 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
       :draft-key="newCardDraftKey"
       :active="activePage === 'new-card'"
       :initial-title="newCardInitialTitle"
+      :initial-content="newCardInitialContent"
       mode="create"
       @cancel="showHomePage"
       @open-settings="showSettingsPage"
