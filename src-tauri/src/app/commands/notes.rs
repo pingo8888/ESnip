@@ -8,13 +8,13 @@ use crate::{
 #[tauri::command]
 pub(crate) fn list_notes_page(
     state: State<'_, DbState>,
-    cursor_created_at: Option<i64>,
+    cursor_updated_at: Option<i64>,
     cursor_id: Option<String>,
     limit: Option<i64>,
 ) -> Result<NotesPage, String> {
     let conn = state.conn.lock().map_err(|error| error.to_string())?;
 
-    crate::store::notes::list_notes_page(&conn, cursor_created_at, cursor_id, limit)
+    crate::store::notes::list_notes_page(&conn, cursor_updated_at, cursor_id, limit)
 }
 
 #[tauri::command]

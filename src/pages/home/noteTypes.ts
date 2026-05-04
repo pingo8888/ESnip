@@ -27,6 +27,6 @@ export type NoteUpdateInput = NoteInput & {
 };
 
 export type NotesCursor = {
-  createdAt: number;
+  updatedAt: number;
   id: string;
 };

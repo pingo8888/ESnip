@@ -28,7 +28,7 @@ function splitParagraphs(value: string) {
 
     <div class="note-meta">
       <span class="note-kind">{{ translateNoteKind(note.kind) }}</span>
-      <time>{{ formatRelativeTime(note.createdAt) }}</time>
+      <time>{{ formatRelativeTime(note.updatedAt) }}</time>
     </div>
 
     <h3 v-if="note.title">{{ note.title }}</h3>

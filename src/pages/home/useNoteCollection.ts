@@ -67,12 +67,9 @@ export function useNoteCollection() {
 
   async function updateNote(input: NoteUpdateInput) {
     const note = await updatePersistedNote(input);
-    const index = notes.value.findIndex((item) => item.id === note.id);
+    const filtered = notes.value.filter((item) => item.id !== note.id);
 
-    notes.value =
-      index >= 0
-        ? notes.value.map((item) => (item.id === note.id ? note : item))
-        : [note, ...notes.value];
+    notes.value = [note, ...filtered];
     return note;
   }
 

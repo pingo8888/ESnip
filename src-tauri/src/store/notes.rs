@@ -39,7 +39,7 @@ pub(crate) struct NotesPage {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct NotesCursor {
-    created_at: i64,
+    updated_at: i64,
     id: String,
 }
 
@@ -87,25 +87,25 @@ pub(crate) fn open_connection_at_dir(data_dir: &Path) -> Result<Connection, Stri
 
 pub(crate) fn list_notes_page(
     conn: &Connection,
-    cursor_created_at: Option<i64>,
+    cursor_updated_at: Option<i64>,
     cursor_id: Option<String>,
     limit: Option<i64>,
 ) -> Result<NotesPage, String> {
     let page_size = limit.unwrap_or(80).clamp(1, 100);
 
-    let notes = if let (Some(created_at), Some(id)) = (cursor_created_at, cursor_id) {
+    let notes = if let (Some(updated_at), Some(id)) = (cursor_updated_at, cursor_id) {
         let mut stmt = conn
             .prepare(
                 "SELECT id, title, content, kind, tone, tags_json, created_at, updated_at
                  FROM notes
-                 WHERE created_at < ?1 OR (created_at = ?1 AND id < ?2)
-                 ORDER BY created_at DESC, id DESC
+                 WHERE updated_at < ?1 OR (updated_at = ?1 AND id < ?2)
+                 ORDER BY updated_at DESC, id DESC
                  LIMIT ?3",
             )
             .map_err(|error| error.to_string())?;
 
         let notes = collect_notes(
-            stmt.query_map(params![created_at, id, page_size], map_note_row)
+            stmt.query_map(params![updated_at, id, page_size], map_note_row)
                 .map_err(|error| error.to_string())?,
         );
 
@@ -115,7 +115,7 @@ pub(crate) fn list_notes_page(
             .prepare(
                 "SELECT id, title, content, kind, tone, tags_json, created_at, updated_at
                  FROM notes
-                 ORDER BY created_at DESC, id DESC
+                 ORDER BY updated_at DESC, id DESC
                  LIMIT ?1",
             )
             .map_err(|error| error.to_string())?;
@@ -129,7 +129,7 @@ pub(crate) fn list_notes_page(
     }?;
 
     let next_cursor = notes.last().map(|note| NotesCursor {
-        created_at: note.created_at,
+        updated_at: note.updated_at,
         id: note.id.clone(),
     });
 
@@ -173,7 +173,7 @@ pub(crate) fn search_notes(
              JOIN notes ON notes_fts.rowid = notes.rowid
              WHERE notes_fts MATCH ?1
                {tag_filter_sql}
-             ORDER BY bm25(notes_fts), notes.created_at DESC, notes.id DESC
+             ORDER BY bm25(notes_fts), notes.updated_at DESC, notes.id DESC
              LIMIT ?{}",
                 parsed_query.tags.len() + 2
             ),
@@ -307,7 +307,7 @@ fn search_notes_like(
              WHERE (COALESCE(title, '') LIKE ?1 ESCAPE '\\'
                 OR COALESCE(content, '') LIKE ?1 ESCAPE '\\')
                {tag_filter_sql}
-             ORDER BY created_at DESC, id DESC
+             ORDER BY updated_at DESC, id DESC
              LIMIT ?{}",
             tags.len() + 2
         ))
@@ -339,7 +339,7 @@ fn search_notes_by_tags(
                  FROM notes
                  WHERE 1 = 1
                    {tag_filter_sql}
-                 ORDER BY created_at DESC, id DESC
+                 ORDER BY updated_at DESC, id DESC
                  LIMIT ?{}",
             tags.len() + 1
         ))

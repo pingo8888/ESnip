@@ -24,7 +24,7 @@ export type NotesPage = {
 
 export async function listNotesPage(cursor: NotesCursor | null, limit = 80): Promise<NotesPage> {
   const page = await invoke<BackendNotesPage>("list_notes_page", {
-    cursorCreatedAt: cursor?.createdAt ?? null,
+    cursorUpdatedAt: cursor?.updatedAt ?? null,
     cursorId: cursor?.id ?? null,
     limit,
   });
