@@ -84,7 +84,7 @@ UI Preview:
 
 ## 📄 许可证 / License
 
-GNU AGPL v3 — Free to use and modify. / 可自由使用和修改。
+GNU AGPL v3 — 自由软件，修改和网络分发须公开源码 / Free software, modified versions and network distribution must disclose source code.
 
 ---
 
