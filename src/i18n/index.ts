@@ -52,6 +52,7 @@ export function useI18n() {
     selectedLanguageLabel,
     setLocale,
     t,
+    translateError,
     translateNoteKind,
   };
 }
@@ -64,6 +65,16 @@ export function t(key: MessageKey, params?: TranslateParams) {
   }
 
   return template.replace(/\{(\w+)\}/g, (match, name) => String(params[name] ?? match));
+}
+
+export function translateError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+
+  if (message.startsWith("errors.") && message in zhCNMessages) {
+    return t(message as MessageKey);
+  }
+
+  return message;
 }
 
 export function translateNoteKind(kind: string) {

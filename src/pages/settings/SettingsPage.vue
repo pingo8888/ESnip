@@ -36,7 +36,7 @@ const shortcutMessages = reactive<Record<HotkeyAction, string>>({
   save: "",
   title: "",
 });
-const { languageOptions, locale, selectedLanguageLabel, setLocale, t } = useI18n();
+const { languageOptions, locale, selectedLanguageLabel, setLocale, t, translateError } = useI18n();
 const { dataDir, hotkeys, replaceSettings, resetHotkey, setHotkey } = useAppSettings();
 const { checkAndInstallUpdate, isBusy: isUpdateBusy, message: updateMessage } = useAppUpdater();
 
@@ -98,7 +98,7 @@ async function chooseAndMigrateDataDir() {
     storageMessage.value = t("settings.storage.migrated");
     emit("dataDirChanged");
   } catch (error) {
-    storageMessage.value = error instanceof Error ? error.message : String(error);
+    storageMessage.value = translateError(error);
   } finally {
     isMigratingDataDir.value = false;
   }
@@ -108,7 +108,7 @@ async function revealCurrentDataDir() {
   try {
     await revealDataDir();
   } catch (error) {
-    storageMessage.value = error instanceof Error ? error.message : String(error);
+    storageMessage.value = translateError(error);
   }
 }
 
@@ -136,7 +136,7 @@ async function resetShortcut(action: HotkeyAction) {
     await resetHotkey(action);
     shortcutMessages[action] = t("settings.shortcuts.saved");
   } catch (error) {
-    shortcutMessages[action] = error instanceof Error ? error.message : String(error);
+    shortcutMessages[action] = translateError(error);
   } finally {
     await cancelHotkeyCapture();
   }
@@ -150,7 +150,7 @@ async function saveCapturedHotkey(action: HotkeyAction, hotkey: string) {
     shortcutMessages[action] = t("settings.shortcuts.saved");
     await cancelHotkeyCapture();
   } catch (error) {
-    shortcutMessages[action] = error instanceof Error ? error.message : String(error);
+    shortcutMessages[action] = translateError(error);
   }
 }
 

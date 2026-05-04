@@ -223,7 +223,7 @@ fn normalize_settings<R: Runtime>(
 
     let hotkeys = normalize_hotkeys(settings.hotkeys);
     if reject_duplicate_hotkeys && has_duplicate_hotkeys(&hotkeys) {
-        return Err("快捷键不能重复".to_string());
+        return Err("errors.duplicateHotkeys".to_string());
     }
 
     Ok(AppSettings {

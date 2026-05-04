@@ -84,6 +84,7 @@ export const zhCNMessages = {
   "window.minimize": "最小化",
   "deleteDialog.copy": "确定移除卡片？此操作无法撤销。",
   "deleteDialog.title": "删除这张卡片？",
+  "errors.duplicateHotkeys": "快捷键不能重复。",
 } as const;
 
 export type MessageKey = keyof typeof zhCNMessages;
