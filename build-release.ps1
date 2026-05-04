@@ -30,7 +30,7 @@ $env:TAURI_SIGNING_PRIVATE_KEY = Get-Content -Raw -LiteralPath $PrivateKeyPath
 
 npm run tauri -- build
 
-$ReleaseDir = Join-Path $Root "release\v$Version"
+$ReleaseDir = Join-Path $Root "release\$Version"
 New-Item -ItemType Directory -Path $ReleaseDir -Force | Out-Null
 
 $BundleDir = Join-Path $Root "src-tauri\target\release\bundle"
@@ -48,7 +48,7 @@ Copy-Item -LiteralPath $Setup.FullName -Destination $ReleaseDir -Force
 Copy-Item -LiteralPath $SetupSig.FullName -Destination $ReleaseDir -Force
 
 $Signature = (Get-Content -Raw -LiteralPath $SetupSig.FullName).Trim()
-$SetupUrl = "https://github.com/pingo8888/ESnip/releases/download/v$Version/$($Setup.Name)"
+$SetupUrl = "https://github.com/pingo8888/ESnip/releases/download/$Version/$($Setup.Name)"
 
 $Latest = [ordered]@{
   version = $Version
@@ -71,4 +71,4 @@ Get-ChildItem -Path $ReleaseDir -File | ForEach-Object {
   Write-Host " - $($_.FullName)"
 }
 Write-Host ""
-Write-Host "Upload all files above to GitHub Release: v$Version"
+Write-Host "Upload all files above to GitHub Release: $Version"
