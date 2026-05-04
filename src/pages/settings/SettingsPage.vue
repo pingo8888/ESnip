@@ -11,6 +11,7 @@ import {
   type HotkeyAction,
 } from "../../settings/appSettingsRepository";
 import { useAppSettings } from "../../settings/useAppSettings";
+import { formatHotkeyParts, normalizeHotkeyFromKeyboardEvent } from "../../settings/hotkeys";
 import { useAppUpdater } from "../../updates/useAppUpdater";
 import type { Locale, MessageKey } from "../../i18n/types";
 
@@ -32,6 +33,7 @@ const storageMessage = ref("");
 const shortcutMessages = reactive<Record<HotkeyAction, string>>({
   content: "",
   paragraph: "",
+  save: "",
   title: "",
 });
 const { languageOptions, locale, selectedLanguageLabel, setLocale, t } = useI18n();
@@ -62,6 +64,12 @@ const shortcutItems = computed(() => [
     description: t("settings.shortcuts.paragraphDescription"),
     hotkey: hotkeys.value.paragraph,
     title: t("settings.shortcuts.paragraphTitle"),
+  },
+  {
+    action: "save" as const,
+    description: t("settings.shortcuts.saveDescription"),
+    hotkey: hotkeys.value.save,
+    title: t("settings.shortcuts.saveTitle"),
   },
 ]);
 
@@ -146,10 +154,6 @@ async function saveCapturedHotkey(action: HotkeyAction, hotkey: string) {
   }
 }
 
-function formatHotkeyParts(hotkey: string) {
-  return hotkey.split("+").filter(Boolean);
-}
-
 function handleHotkeyCaptureKeydown(action: HotkeyAction, event: KeyboardEvent) {
   if (event.key === "Escape") {
     event.preventDefault();
@@ -172,50 +176,6 @@ function handleHotkeyCaptureKeydown(action: HotkeyAction, event: KeyboardEvent) 
   }
 
   void saveCapturedHotkey(action, normalized);
-}
-
-function normalizeHotkeyFromKeyboardEvent(event: KeyboardEvent) {
-  if (event.metaKey || event.shiftKey) {
-    return null;
-  }
-
-  const keyToken = extractHotkeyKeyToken(event);
-  if (!keyToken) {
-    return null;
-  }
-
-  const validModifierCombo = (event.altKey && !event.ctrlKey) || (event.ctrlKey && event.altKey);
-  if (!validModifierCombo) {
-    return null;
-  }
-
-  const parts: string[] = [];
-  if (event.ctrlKey) {
-    parts.push("Ctrl");
-  }
-  if (event.altKey) {
-    parts.push("Alt");
-  }
-  parts.push(keyToken);
-  return parts.join("+");
-}
-
-function extractHotkeyKeyToken(event: KeyboardEvent) {
-  const code = event.code ?? "";
-  if (/^Key[A-Z]$/.test(code)) {
-    return code.slice(3);
-  }
-  if (/^Digit[0-9]$/.test(code)) {
-    return code.slice(5);
-  }
-
-  if (event.key === "Control" || event.key === "Alt" || event.key === "Shift") {
-    return null;
-  }
-  if (/^[a-z0-9]$/i.test(event.key)) {
-    return event.key.toUpperCase();
-  }
-  return null;
 }
 
 function handleSettingsKeydown(event: KeyboardEvent) {

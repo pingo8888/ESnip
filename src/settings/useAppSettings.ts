@@ -11,6 +11,7 @@ import {
 const DEFAULT_HOTKEYS: HotkeySettings = {
   content: "Alt+S",
   paragraph: "Alt+P",
+  save: "Alt+Enter",
   title: "Alt+W",
 };
 
@@ -101,6 +102,7 @@ function normalizeHotkeys(hotkeys: Partial<HotkeySettings> | undefined): HotkeyS
   return {
     content: hotkeys?.content || DEFAULT_HOTKEYS.content,
     paragraph: hotkeys?.paragraph || DEFAULT_HOTKEYS.paragraph,
+    save: hotkeys?.save || DEFAULT_HOTKEYS.save,
     title: hotkeys?.title || DEFAULT_HOTKEYS.title,
   };
 }

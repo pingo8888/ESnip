@@ -11,12 +11,19 @@ const DEFAULT_LOCALE: &str = "zh-CN";
 pub(crate) const DEFAULT_TITLE_HOTKEY: &str = "Alt+W";
 pub(crate) const DEFAULT_CONTENT_HOTKEY: &str = "Alt+S";
 pub(crate) const DEFAULT_PARAGRAPH_HOTKEY: &str = "Alt+P";
+const DEFAULT_SAVE_HOTKEY: &str = "Alt+Enter";
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 struct ParsedHotkey {
     ctrl: bool,
     alt: bool,
-    key: char,
+    key: HotkeyKey,
+}
+
+#[derive(Clone, Debug)]
+enum HotkeyKey {
+    Alphanumeric(char),
+    Enter,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -47,6 +54,8 @@ pub(crate) struct HotkeySettings {
     pub(crate) content: String,
     #[serde(default = "default_paragraph_hotkey")]
     pub(crate) paragraph: String,
+    #[serde(default = "default_save_hotkey")]
+    pub(crate) save: String,
 }
 
 impl Default for AppSettings {
@@ -69,6 +78,7 @@ impl Default for HotkeySettings {
             title: default_title_hotkey(),
             content: default_content_hotkey(),
             paragraph: default_paragraph_hotkey(),
+            save: default_save_hotkey(),
         }
     }
 }
@@ -175,7 +185,7 @@ pub(crate) fn apply_saved_window_state<R: Runtime>(app: &AppHandle<R>) {
 pub(crate) fn hotkey_virtual_key(hotkey: &str, default_hotkey: &str) -> u32 {
     parse_hotkey(hotkey)
         .or_else(|| parse_hotkey(default_hotkey))
-        .map(|parsed| parsed.key as u32)
+        .map(|parsed| parsed.key.virtual_key())
         .unwrap_or('W' as u32)
 }
 
@@ -185,7 +195,7 @@ pub(crate) fn hotkey_modifier_state(hotkey: &str, default_hotkey: &str) -> (bool
         .unwrap_or(ParsedHotkey {
             ctrl: false,
             alt: true,
-            key: 'W',
+            key: HotkeyKey::Alphanumeric('W'),
         });
 
     (parsed.ctrl, parsed.alt)
@@ -254,6 +264,10 @@ fn default_paragraph_hotkey() -> String {
     DEFAULT_PARAGRAPH_HOTKEY.to_string()
 }
 
+fn default_save_hotkey() -> String {
+    DEFAULT_SAVE_HOTKEY.to_string()
+}
+
 fn default_data_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, String> {
     app.path().app_data_dir().map_err(|error| error.to_string())
 }
@@ -283,6 +297,7 @@ fn normalize_hotkeys(hotkeys: HotkeySettings) -> HotkeySettings {
         title: normalize_hotkey(&hotkeys.title, DEFAULT_TITLE_HOTKEY),
         content: normalize_hotkey(&hotkeys.content, DEFAULT_CONTENT_HOTKEY),
         paragraph: normalize_hotkey(&hotkeys.paragraph, DEFAULT_PARAGRAPH_HOTKEY),
+        save: normalize_hotkey(&hotkeys.save, DEFAULT_SAVE_HOTKEY),
     }
 }
 
@@ -304,15 +319,7 @@ fn parse_hotkey(input: &str) -> Option<ParsedHotkey> {
         return None;
     }
 
-    let key_raw = parts.last().copied().unwrap_or_default();
-    if key_raw.len() != 1 {
-        return None;
-    }
-
-    let key = key_raw.chars().next()?;
-    if !key.is_ascii_alphanumeric() {
-        return None;
-    }
+    let key = parse_hotkey_key(parts.last().copied().unwrap_or_default())?;
 
     let mut ctrl = false;
     let mut alt = false;
@@ -349,12 +356,55 @@ fn format_hotkey(parsed: ParsedHotkey) -> String {
     if parsed.alt {
         parts.push("Alt".to_string());
     }
-    parts.push(parsed.key.to_ascii_uppercase().to_string());
+    parts.push(parsed.key.label());
     parts.join("+")
 }
 
 fn has_duplicate_hotkeys(hotkeys: &HotkeySettings) -> bool {
-    hotkeys.title.eq_ignore_ascii_case(&hotkeys.content)
-        || hotkeys.title.eq_ignore_ascii_case(&hotkeys.paragraph)
-        || hotkeys.content.eq_ignore_ascii_case(&hotkeys.paragraph)
+    let values = [
+        &hotkeys.title,
+        &hotkeys.content,
+        &hotkeys.paragraph,
+        &hotkeys.save,
+    ];
+
+    values.iter().enumerate().any(|(index, value)| {
+        values
+            .iter()
+            .skip(index + 1)
+            .any(|other| value.eq_ignore_ascii_case(other))
+    })
+}
+
+fn parse_hotkey_key(input: &str) -> Option<HotkeyKey> {
+    if input.eq_ignore_ascii_case("ENTER") {
+        return Some(HotkeyKey::Enter);
+    }
+
+    if input.len() != 1 {
+        return None;
+    }
+
+    let key = input.chars().next()?;
+    if key.is_ascii_alphanumeric() {
+        Some(HotkeyKey::Alphanumeric(key.to_ascii_uppercase()))
+    } else {
+        None
+    }
+}
+
+impl HotkeyKey {
+    fn label(&self) -> String {
+        match self {
+            Self::Alphanumeric(key) => key.to_string(),
+            Self::Enter => "Enter".to_string(),
+        }
+    }
+
+    fn virtual_key(&self) -> u32 {
+        match self {
+            Self::Alphanumeric(key) => *key as u32,
+            Self::Enter => 0x0D,
+        }
+    }
 }

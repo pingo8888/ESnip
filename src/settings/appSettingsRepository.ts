@@ -7,7 +7,7 @@ export type AppSettings = {
   locale: Locale;
 };
 
-export type HotkeyAction = "title" | "content" | "paragraph";
+export type HotkeyAction = "title" | "content" | "paragraph" | "save";
 
 export type HotkeySettings = Record<HotkeyAction, string>;
 

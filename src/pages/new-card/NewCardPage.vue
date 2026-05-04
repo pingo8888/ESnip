@@ -2,6 +2,8 @@
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { ArrowLeft, Settings } from "lucide-vue-next";
 import { useI18n } from "../../i18n";
+import { isHotkeyEvent } from "../../settings/hotkeys";
+import { useAppSettings } from "../../settings/useAppSettings";
 import NoteCard from "../home/NoteCard.vue";
 import type { Note, NoteInput, NoteKind, NoteTone, NoteUpdateInput } from "../home/noteTypes";
 import TagSuggestInput from "../shared/TagSuggestInput.vue";
@@ -38,6 +40,7 @@ const excerpt = ref("");
 const tagsInput = ref("");
 const tagSuggestionsOpen = ref(false);
 const { t, translateNoteKind } = useI18n();
+const { hotkeys } = useAppSettings();
 
 const emit = defineEmits<{
   cancel: [];
@@ -86,7 +89,7 @@ function handlePageKeydown(event: KeyboardEvent) {
     return;
   }
 
-  if (event.ctrlKey && event.key === "Enter") {
+  if (isHotkeyEvent(event, hotkeys.value.save)) {
     event.preventDefault();
     saveCard();
     return;
