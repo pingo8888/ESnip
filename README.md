@@ -77,14 +77,14 @@ UI Preview:
 
 如果您觉得 ESnip 有帮助，请考虑支持其开发 / If you find ESnip helpful, please consider supporting its development:
 
-- [⭐ Star the project on GitHub / 在 GitHub 上给项目加星](https://github.com/pingo8888/ESnip)
-- [🐛 Report issues or suggest features / 报告问题或建议功能](https://github.com/pingo8888/ESnip/issues)
+- [⭐ 在 GitHub 上给项目加星 / Star the project on GitHub](https://github.com/pingo8888/ESnip)
+- [🐛 报告问题或建议功能 / Report issues or suggest features](https://github.com/pingo8888/ESnip/issues)
 
 ---
 
 ## 📄 许可证 / License
 
-MIT License — Free to use and modify. / 可自由使用和修改。
+GNU AGPL v3 — Free to use and modify. / 可自由使用和修改。
 
 ---
 
