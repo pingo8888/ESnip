@@ -9,6 +9,7 @@ import DeleteNoteConfirm from "./home/DeleteNoteConfirm.vue";
 import HomeShellView from "./home/HomeShellView.vue";
 import HomePageView from "./home/HomePageView.vue";
 import type { Note, NoteInput, NoteKind, NoteUpdateInput } from "./home/noteTypes";
+import { computeColumnLayout } from "./home/cardColumns";
 import { findNoteByTitle } from "./home/notesRepository";
 import { useNoteCollection } from "./home/useNoteCollection";
 import NewCardPage from "./new-card/NewCardPage.vue";
@@ -40,18 +41,7 @@ let resizeObserver: ResizeObserver | undefined;
 let unlistenQuickCapture: UnlistenFn | undefined;
 let unlistenQuickCaptureContent: UnlistenFn | undefined;
 
-const columnCount = computed(() => {
-  const width = notesScrollWidth.value;
-
-  if (width < 620) {
-    return 1;
-  }
-
-  const minColumnWidth = width < 920 ? 190 : 210;
-  const columnGap = 14;
-
-  return Math.max(1, Math.floor((width + columnGap) / (minColumnWidth + columnGap)));
-});
+const columnCount = computed(() => computeColumnLayout(notesScrollWidth.value).columnCount);
 
 const masonryColumns = computed(() => {
   const columns = Array.from({ length: columnCount.value }, () => [] as Note[]);

@@ -4,6 +4,7 @@ import { ArrowLeft, Settings } from "lucide-vue-next";
 import { useI18n } from "../../i18n";
 import { isHotkeyEvent } from "../../settings/hotkeys";
 import { useAppSettings } from "../../settings/useAppSettings";
+import { computeColumnLayout } from "../home/cardColumns";
 import NoteCard from "../home/NoteCard.vue";
 import type { Note, NoteInput, NoteKind, NoteTone, NoteUpdateInput } from "../home/noteTypes";
 import TagSuggestInput from "../shared/TagSuggestInput.vue";
@@ -41,6 +42,19 @@ const tagsInput = ref("");
 const tagSuggestionsOpen = ref(false);
 const { t, translateNoteKind } = useI18n();
 const { hotkeys } = useAppSettings();
+
+const windowWidth = ref(window.innerWidth);
+
+function onWindowResize() {
+  windowWidth.value = window.innerWidth;
+}
+
+const previewCardWidth = computed(() => {
+  const scrollPadding = 54; // .notes-scroll horizontal padding: 24px + 30px
+  const containerWidth = windowWidth.value - scrollPadding;
+
+  return `${computeColumnLayout(containerWidth).cardWidth}px`;
+});
 
 const emit = defineEmits<{
   cancel: [];
@@ -126,11 +140,13 @@ watch(
 
 onMounted(() => {
   window.addEventListener("keydown", handlePageKeydown, true);
+  window.addEventListener("resize", onWindowResize);
   titleInputRef.value?.focus();
 });
 
 onUnmounted(() => {
   window.removeEventListener("keydown", handlePageKeydown, true);
+  window.removeEventListener("resize", onWindowResize);
 });
 </script>
 
@@ -205,7 +221,7 @@ onUnmounted(() => {
           </section>
         </div>
 
-        <section class="field-group preview-group" aria-labelledby="preview-label">
+        <section class="field-group preview-group" :style="{ width: previewCardWidth }" aria-labelledby="preview-label">
           <div id="preview-label" class="field-label">{{ t("newCard.preview") }}</div>
 
           <NoteCard :note="previewNote" />
