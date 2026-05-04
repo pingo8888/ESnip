@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
-import { Plus, Search, Settings, X } from "lucide-vue-next";
+import { ArrowBigUp, Plus, Search, Settings, X } from "lucide-vue-next";
 import { useI18n } from "../../i18n";
 import NoteCard from "./NoteCard.vue";
 import NoteContextMenu from "./NoteContextMenu.vue";
@@ -11,6 +11,8 @@ const props = defineProps<{
   masonryColumns: Note[][];
   resultCount: number;
   searchQuery: string;
+  updateAvailable: boolean;
+  updateBusy: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -19,6 +21,7 @@ const emit = defineEmits<{
   editNote: [note: Note];
   notesScrollReady: [el: HTMLElement | null];
   openSettings: [];
+  startUpdate: [];
   updateSearchQuery: [query: string];
 }>();
 
@@ -96,6 +99,18 @@ onUnmounted(() => {
 <template>
   <main class="commonplace-shell">
     <div class="app-toolbar" :aria-label="t('home.appActions')">
+      <div class="app-actions app-actions--left">
+        <button
+          v-if="updateAvailable"
+          type="button"
+          :aria-label="t('home.updateAvailable')"
+          :disabled="updateBusy"
+          :title="t('home.updateAvailable')"
+          @click="$emit('startUpdate')"
+        >
+          <ArrowBigUp aria-hidden="true" />
+        </button>
+      </div>
       <div class="app-actions">
         <button type="button" :aria-label="t('home.addNote')" :title="t('home.addNote')" @click="$emit('createNote')">
           <Plus aria-hidden="true" />

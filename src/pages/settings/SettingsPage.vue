@@ -10,6 +10,7 @@ import {
   type HotkeyAction,
 } from "../../settings/appSettingsRepository";
 import { useAppSettings } from "../../settings/useAppSettings";
+import { useAppUpdater } from "../../updates/useAppUpdater";
 import type { Locale, MessageKey } from "../../i18n/types";
 
 type SettingsTab = "general" | "shortcuts";
@@ -35,6 +36,7 @@ const shortcutMessages = reactive<Record<HotkeyAction, string>>({
 });
 const { languageOptions, locale, selectedLanguageLabel, setLocale, t } = useI18n();
 const { dataDir, hotkeys, replaceSettings, resetHotkey, setHotkey } = useAppSettings();
+const { checkAndInstallUpdate, isBusy: isUpdateBusy, message: updateMessage } = useAppUpdater();
 
 const emit = defineEmits<{
   back: [];
@@ -327,8 +329,10 @@ onUnmounted(() => {
             <section class="setting-row">
               <span class="setting-title">{{ t("settings.general.checkUpdates") }}</span>
               <div class="update-row update-row--inline">
-                <button type="button">{{ t("settings.general.checkUpdates") }}</button>
-                <span>{{ t("settings.general.latest") }}</span>
+                <button type="button" :disabled="isUpdateBusy" @click="checkAndInstallUpdate">
+                  {{ t("settings.general.checkUpdates") }}
+                </button>
+                <span>{{ updateMessage || t("settings.general.latest") }}</span>
               </div>
             </section>
           </div>

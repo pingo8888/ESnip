@@ -4,6 +4,7 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { initI18n } from "../i18n";
+import { useAppUpdater } from "../updates/useAppUpdater";
 import DeleteNoteConfirm from "./home/DeleteNoteConfirm.vue";
 import HomeShellView from "./home/HomeShellView.vue";
 import HomePageView from "./home/HomePageView.vue";
@@ -26,6 +27,7 @@ type QuickCaptureContentPayload = {
 const activePage = ref<ActivePage>("home");
 const settingsReturnPage = ref<WorkPage | null>(null);
 const { notes, addNote, deleteNote, loadInitialNotes, searchQuery, setSearchQuery, updateNote } = useNoteCollection();
+const { checkAndInstallUpdate, checkForUpdate, hasUpdate, isBusy: isUpdateBusy } = useAppUpdater();
 const editingNote = ref<Note | null>(null);
 const deletingNote = ref<Note | null>(null);
 const newCardInitialTitle = ref("");
@@ -203,6 +205,7 @@ async function handleDataDirChanged() {
 onMounted(() => {
   void initI18n();
   void loadInitialNotes();
+  void checkForUpdate({ silent: true });
   void listen<QuickCapturePayload>("quick-capture", (event) => {
     void handleQuickCapture(event.payload);
   }).then((unlisten) => {
@@ -261,11 +264,14 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
       :masonry-columns="masonryColumns"
       :result-count="notes.length"
       :search-query="searchQuery"
+      :update-available="hasUpdate"
+      :update-busy="isUpdateBusy"
       @create-note="showNewCardPage"
       @delete-note="requestDeleteNote"
       @edit-note="showEditCardPage"
       @notes-scroll-ready="setNotesScrollElement"
       @open-settings="showSettingsPage"
+      @start-update="checkAndInstallUpdate"
       @update-search-query="setSearchQuery"
     />
     <NewCardPage

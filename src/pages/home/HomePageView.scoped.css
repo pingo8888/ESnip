@@ -22,7 +22,7 @@
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 8px;
   min-height: 46px;
   border-bottom: 1px solid transparent;
@@ -33,6 +33,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.app-actions--left {
+  min-width: 30px;
 }
 
 .app-actions button {
@@ -55,6 +59,10 @@
 .app-actions button:hover {
   color: #1f1b17;
   background: rgba(99, 87, 74, 0.08);
+}
+
+.app-actions button:disabled {
+  opacity: 0.48;
 }
 
 .app-actions button:active {
