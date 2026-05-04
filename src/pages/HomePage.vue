@@ -134,7 +134,7 @@ async function handleQuickCapture(payload: QuickCapturePayload) {
   const title = payload.title?.trim() ?? "";
 
   if (!title) {
-    showNewCardPage();
+    showNewCardPage("", "", "词语");
     return;
   }
 
@@ -149,12 +149,12 @@ async function handleQuickCapture(payload: QuickCapturePayload) {
     console.error("Failed to find captured note title", error);
   }
 
-  showNewCardPage(title);
+  showNewCardPage(title, "", "词语");
 }
 
 function handleQuickCaptureContent(payload: QuickCaptureContentPayload) {
   const content = payload.content?.trim() ?? "";
-  showNewCardPage("", content, payload.kind ?? "词语");
+  showNewCardPage("", content, payload.kind ?? "句子");
 }
 
 async function saveNewNote(note: NoteInput) {
@@ -192,6 +192,11 @@ async function confirmDeleteNote() {
   await deleteNote(deletingNote.value.id);
   deletingNote.value = null;
 
+  void nextTick(updateNotesScrollWidth);
+}
+
+async function handleDataDirChanged() {
+  await loadInitialNotes();
   void nextTick(updateNotesScrollWidth);
 }
 
@@ -287,7 +292,7 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
       @save="saveEditedNote"
     />
 
-    <SettingsPage v-if="activePage === 'settings'" @back="returnFromSettings" />
+    <SettingsPage v-if="activePage === 'settings'" @back="returnFromSettings" @data-dir-changed="handleDataDirChanged" />
 
     <DeleteNoteConfirm
       v-if="deletingNote"

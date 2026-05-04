@@ -5,6 +5,8 @@ use std::sync::{
 
 use rusqlite::Connection;
 
+use crate::store::settings::HotkeySettings;
+
 pub(crate) struct DbState {
     pub(crate) conn: Mutex<Connection>,
 }
@@ -36,5 +38,29 @@ pub(crate) struct HotkeyShutdown(pub(crate) Arc<AtomicBool>);
 impl HotkeyShutdown {
     pub(crate) fn request_shutdown(&self) {
         self.0.store(true, Ordering::Relaxed);
+    }
+}
+
+#[derive(Clone)]
+pub(crate) struct HotkeyState(pub(crate) Arc<Mutex<HotkeySettings>>);
+
+impl Default for HotkeyState {
+    fn default() -> Self {
+        Self(Arc::new(Mutex::new(HotkeySettings::default())))
+    }
+}
+
+#[derive(Clone)]
+pub(crate) struct HotkeyEnabled(pub(crate) Arc<AtomicBool>);
+
+impl Default for HotkeyEnabled {
+    fn default() -> Self {
+        Self(Arc::new(AtomicBool::new(true)))
+    }
+}
+
+impl HotkeyEnabled {
+    pub(crate) fn set_enabled(&self, enabled: bool) {
+        self.0.store(enabled, Ordering::Relaxed);
     }
 }

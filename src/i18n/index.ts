@@ -1,5 +1,6 @@
-import { computed, readonly, ref } from "vue";
-import { getAppSettings, updateAppChromeTitle, updateAppSettings } from "../settings/appSettingsRepository";
+import { computed } from "vue";
+import { updateAppChromeTitle } from "../settings/appSettingsRepository";
+import { initAppSettings, setLocale as saveLocale, useAppSettings } from "../settings/useAppSettings";
 import { enUSMessages } from "./en-US";
 import type { Locale, TranslateParams } from "./types";
 import { supportedLocales } from "./types";
@@ -12,7 +13,7 @@ const messages = {
   "zh-CN": zhCNMessages,
 } satisfies Record<Locale, Record<MessageKey, string>>;
 
-const currentLocale = ref<Locale>(DEFAULT_LOCALE);
+const { locale: currentLocale } = useAppSettings();
 let initialized = false;
 
 export const languageOptions: Array<{ label: string; value: Locale }> = [
@@ -28,35 +29,26 @@ export async function initI18n() {
   initialized = true;
 
   try {
-    const settings = await getAppSettings();
-    currentLocale.value = normalizeLocale(settings.locale);
-    void syncAppChromeTitle();
+    await initAppSettings();
   } catch (error) {
     console.error("Failed to load app locale", error);
-    void syncAppChromeTitle();
   }
+
+  void syncAppChromeTitle();
 }
 
 export async function setLocale(locale: Locale) {
   const nextLocale = normalizeLocale(locale);
 
-  currentLocale.value = nextLocale;
+  await saveLocale(nextLocale);
   void syncAppChromeTitle();
-
-  try {
-    const settings = await updateAppSettings({ locale: nextLocale });
-    currentLocale.value = normalizeLocale(settings.locale);
-    void syncAppChromeTitle();
-  } catch (error) {
-    console.error("Failed to save app locale", error);
-  }
 }
 
 export function useI18n() {
   return {
     formatRelativeTime,
     languageOptions,
-    locale: readonly(currentLocale),
+    locale: currentLocale,
     selectedLanguageLabel,
     setLocale,
     t,

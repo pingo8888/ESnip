@@ -40,15 +40,22 @@ pub(crate) fn set_app_chrome_labels<R: tauri::Runtime>(
     }
 
     if let Some(tray) = app.tray_by_id("main") {
-        tray.set_tooltip(Some(title)).map_err(|error| error.to_string())?;
-        let menu = create_tray_menu(app, show_label, quit_label).map_err(|error| error.to_string())?;
-        tray.set_menu(Some(menu)).map_err(|error| error.to_string())?;
+        tray.set_tooltip(Some(title))
+            .map_err(|error| error.to_string())?;
+        let menu =
+            create_tray_menu(app, show_label, quit_label).map_err(|error| error.to_string())?;
+        tray.set_menu(Some(menu))
+            .map_err(|error| error.to_string())?;
     }
 
     Ok(())
 }
 
-fn create_tray_menu<R, M>(manager: &M, show_label: &str, quit_label: &str) -> tauri::Result<tauri::menu::Menu<R>>
+fn create_tray_menu<R, M>(
+    manager: &M,
+    show_label: &str,
+    quit_label: &str,
+) -> tauri::Result<tauri::menu::Menu<R>>
 where
     R: tauri::Runtime,
     M: Manager<R>,
@@ -61,7 +68,10 @@ where
     Menu::with_items(manager, &[&show_item, &quit_item])
 }
 
-pub(crate) fn handle_window_event<R: tauri::Runtime>(window: &tauri::Window<R>, event: &tauri::WindowEvent) {
+pub(crate) fn handle_window_event<R: tauri::Runtime>(
+    window: &tauri::Window<R>,
+    event: &tauri::WindowEvent,
+) {
     if window.label() != "main" {
         return;
     }

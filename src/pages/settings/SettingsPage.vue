@@ -1,110 +1,219 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from "vue";
 import { ArrowLeft, ChevronDown, Settings } from "lucide-vue-next";
 import { useI18n } from "../../i18n";
+import {
+  chooseDataDir,
+  migrateDataDir,
+  revealDataDir,
+  setHotkeysEnabled,
+  type HotkeyAction,
+} from "../../settings/appSettingsRepository";
+import { useAppSettings } from "../../settings/useAppSettings";
 import type { Locale, MessageKey } from "../../i18n/types";
-import NoteCard from "../home/NoteCard.vue";
-import type { Note, NoteKind } from "../home/noteTypes";
 
-type SettingsTab = "general" | "cards" | "storage" | "shortcuts" | "about";
-type SettingsSelect = "language" | "theme";
+type SettingsTab = "general" | "shortcuts";
 
 const appVersion = "0.1.0";
 
-const tabs: SettingsTab[] = ["general", "cards", "storage", "shortcuts", "about"];
+const tabs: SettingsTab[] = ["general", "shortcuts"];
 const tabLabelKeys: Record<SettingsTab, MessageKey> = {
-  about: "settings.tabs.about",
-  cards: "settings.tabs.cards",
   general: "settings.tabs.general",
   shortcuts: "settings.tabs.shortcuts",
-  storage: "settings.tabs.storage",
 };
 
 const activeTab = ref<SettingsTab>("general");
-const openSelect = ref<SettingsSelect | null>(null);
-const theme = ref("paper-light");
-const defaultKind = ref<NoteKind>("词语");
-const cardWidth = ref(210);
-const cardSpacing = ref(14);
-const savePath = ref("~/Documents/ESnip");
-const shortcutKeysTitle = ["Alt", "W"];
-const shortcutKeysContent = ["Alt", "S"];
-const shortcutKeysParagraph = ["Alt", "P"];
-const { languageOptions, locale, selectedLanguageLabel, setLocale, t, translateNoteKind } = useI18n();
+const isLanguageSelectOpen = ref(false);
+const isMigratingDataDir = ref(false);
+const capturingHotkey = ref<HotkeyAction | null>(null);
+const hotkeyDraft = ref("");
+const storageMessage = ref("");
+const shortcutMessages = reactive<Record<HotkeyAction, string>>({
+  content: "",
+  paragraph: "",
+  title: "",
+});
+const { languageOptions, locale, selectedLanguageLabel, setLocale, t } = useI18n();
+const { dataDir, hotkeys, replaceSettings, resetHotkey, setHotkey } = useAppSettings();
 
 const emit = defineEmits<{
   back: [];
+  dataDirChanged: [];
 }>();
 
 const activeTabLabel = computed(() => t(tabLabelKeys[activeTab.value]));
-
-const themeOptions = computed(() => [{ label: t("settings.theme.paperLight"), value: "paper-light" }]);
-
-const selectedThemeLabel = computed(
-  () => themeOptions.value.find((option) => option.value === theme.value)?.label ?? t("settings.theme.paperLight"),
-);
-
-const cardWidthRangeStyle = computed(() => ({
-  "--range-fill": `${((cardWidth.value - 180) / (320 - 180)) * 100}%`,
-}));
-
-const cardSpacingRangeStyle = computed(() => ({
-  "--range-fill": `${((cardSpacing.value - 8) / (28 - 8)) * 100}%`,
-}));
-
-const previewNote = computed<Note>(() => ({
-  id: "settings-preview",
-  title: defaultKind.value === "词语" ? t("settings.preview.wordTitle") : t("settings.preview.title"),
-  excerpt: defaultKind.value === "段落" ? t("settings.preview.paragraphBody") : t("settings.preview.body"),
-  time: t("time.justNow"),
-  tags: [t("settings.preview.tagPreview")],
-  kind: defaultKind.value,
-  tone: "sage",
-  createdAt: Date.now(),
-  updatedAt: Date.now(),
-}));
-
-const previewNotes = computed<Note[]>(() =>
-  Array.from({ length: 4 }, (_, index) => ({
-    ...previewNote.value,
-    id: `settings-preview-${index}`,
-    title:
-      index === 0
-        ? previewNote.value.title
-        : [t("settings.preview.lineTitle"), t("settings.preview.spacingTitle"), t("settings.preview.previewTitle")][
-            index - 1
-          ],
-    excerpt:
-      index === 0
-        ? previewNote.value.excerpt
-        : [
-            t("settings.preview.lineBody"),
-            t("settings.preview.spacingBody"),
-            t("settings.preview.previewBody"),
-          ][index - 1],
-    kind: (["词语", "句子", "段落", defaultKind.value] as NoteKind[])[index],
-    tags: [
-      [t("settings.preview.tagPreview")],
-      [t("settings.preview.tagSentence")],
-      [t("settings.preview.tagInterface")],
-      [t("settings.preview.tagSettings")],
-    ][index],
-    tone: (["sage", "ochre", "clay", "ink"] as const)[index],
-  })),
-);
-
-function toggleSelect(name: SettingsSelect) {
-  openSelect.value = openSelect.value === name ? null : name;
-}
+const shortcutItems = computed(() => [
+  {
+    action: "title" as const,
+    description: t("settings.shortcuts.titleDescription"),
+    hotkey: hotkeys.value.title,
+    title: t("settings.shortcuts.titleTitle"),
+  },
+  {
+    action: "content" as const,
+    description: t("settings.shortcuts.contentDescription"),
+    hotkey: hotkeys.value.content,
+    title: t("settings.shortcuts.contentTitle"),
+  },
+  {
+    action: "paragraph" as const,
+    description: t("settings.shortcuts.paragraphDescription"),
+    hotkey: hotkeys.value.paragraph,
+    title: t("settings.shortcuts.paragraphTitle"),
+  },
+]);
 
 function selectLanguage(value: Locale) {
   void setLocale(value);
-  openSelect.value = null;
+  isLanguageSelectOpen.value = false;
 }
 
-function selectTheme(value: string) {
-  theme.value = value;
-  openSelect.value = null;
+async function chooseAndMigrateDataDir() {
+  if (isMigratingDataDir.value) {
+    return;
+  }
+
+  try {
+    const selectedDir = await chooseDataDir();
+
+    if (!selectedDir) {
+      return;
+    }
+
+    isMigratingDataDir.value = true;
+    storageMessage.value = t("settings.storage.migrating");
+
+    const nextSettings = await migrateDataDir(selectedDir);
+    replaceSettings(nextSettings);
+    storageMessage.value = t("settings.storage.migrated");
+    emit("dataDirChanged");
+  } catch (error) {
+    storageMessage.value = error instanceof Error ? error.message : String(error);
+  } finally {
+    isMigratingDataDir.value = false;
+  }
+}
+
+async function revealCurrentDataDir() {
+  try {
+    await revealDataDir();
+  } catch (error) {
+    storageMessage.value = error instanceof Error ? error.message : String(error);
+  }
+}
+
+async function beginHotkeyCapture(action: HotkeyAction) {
+  capturingHotkey.value = action;
+  hotkeyDraft.value = hotkeys.value[action];
+  shortcutMessages[action] = t("settings.shortcuts.captureHelp");
+  await setHotkeysEnabled(false);
+  await nextTick();
+  document.querySelector<HTMLInputElement>(`[data-hotkey-capture="${action}"]`)?.focus();
+}
+
+async function cancelHotkeyCapture() {
+  if (!capturingHotkey.value) {
+    return;
+  }
+
+  capturingHotkey.value = null;
+  hotkeyDraft.value = "";
+  await setHotkeysEnabled(true);
+}
+
+async function resetShortcut(action: HotkeyAction) {
+  try {
+    await resetHotkey(action);
+    shortcutMessages[action] = t("settings.shortcuts.saved");
+  } catch (error) {
+    shortcutMessages[action] = error instanceof Error ? error.message : String(error);
+  } finally {
+    await cancelHotkeyCapture();
+  }
+}
+
+async function saveCapturedHotkey(action: HotkeyAction, hotkey: string) {
+  hotkeyDraft.value = hotkey;
+
+  try {
+    await setHotkey(action, hotkey);
+    shortcutMessages[action] = t("settings.shortcuts.saved");
+    await cancelHotkeyCapture();
+  } catch (error) {
+    shortcutMessages[action] = error instanceof Error ? error.message : String(error);
+  }
+}
+
+function formatHotkeyParts(hotkey: string) {
+  return hotkey.split("+").filter(Boolean);
+}
+
+function handleHotkeyCaptureKeydown(action: HotkeyAction, event: KeyboardEvent) {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    void cancelHotkeyCapture();
+    return;
+  }
+
+  if (event.key === "Backspace" || event.key === "Delete") {
+    event.preventDefault();
+    hotkeyDraft.value = "";
+    return;
+  }
+
+  event.preventDefault();
+
+  const normalized = normalizeHotkeyFromKeyboardEvent(event);
+  if (!normalized) {
+    shortcutMessages[action] = t("settings.shortcuts.invalid");
+    return;
+  }
+
+  void saveCapturedHotkey(action, normalized);
+}
+
+function normalizeHotkeyFromKeyboardEvent(event: KeyboardEvent) {
+  if (event.metaKey || event.shiftKey) {
+    return null;
+  }
+
+  const keyToken = extractHotkeyKeyToken(event);
+  if (!keyToken) {
+    return null;
+  }
+
+  const validModifierCombo = (event.altKey && !event.ctrlKey) || (event.ctrlKey && event.altKey);
+  if (!validModifierCombo) {
+    return null;
+  }
+
+  const parts: string[] = [];
+  if (event.ctrlKey) {
+    parts.push("Ctrl");
+  }
+  if (event.altKey) {
+    parts.push("Alt");
+  }
+  parts.push(keyToken);
+  return parts.join("+");
+}
+
+function extractHotkeyKeyToken(event: KeyboardEvent) {
+  const code = event.code ?? "";
+  if (/^Key[A-Z]$/.test(code)) {
+    return code.slice(3);
+  }
+  if (/^Digit[0-9]$/.test(code)) {
+    return code.slice(5);
+  }
+
+  if (event.key === "Control" || event.key === "Alt" || event.key === "Shift") {
+    return null;
+  }
+  if (/^[a-z0-9]$/i.test(event.key)) {
+    return event.key.toUpperCase();
+  }
+  return null;
 }
 
 function handleSettingsKeydown(event: KeyboardEvent) {
@@ -114,8 +223,13 @@ function handleSettingsKeydown(event: KeyboardEvent) {
 
   event.preventDefault();
 
-  if (openSelect.value) {
-    openSelect.value = null;
+  if (capturingHotkey.value) {
+    void cancelHotkeyCapture();
+    return;
+  }
+
+  if (isLanguageSelectOpen.value) {
+    isLanguageSelectOpen.value = false;
     return;
   }
 
@@ -128,6 +242,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener("keydown", handleSettingsKeydown, true);
+  void setHotkeysEnabled(true);
 });
 </script>
 
@@ -174,11 +289,11 @@ onUnmounted(() => {
               <span class="setting-title">{{ t("settings.general.language") }}</span>
               <span class="setting-description">{{ t("settings.general.languageDescription") }}</span>
               <span class="select-field">
-                <button type="button" class="select-trigger" @click="toggleSelect('language')">
+                <button type="button" class="select-trigger" @click="isLanguageSelectOpen = !isLanguageSelectOpen">
                   {{ selectedLanguageLabel }}
                   <ChevronDown aria-hidden="true" />
                 </button>
-                <span v-if="openSelect === 'language'" class="select-menu" role="listbox">
+                <span v-if="isLanguageSelectOpen" class="select-menu" role="listbox">
                   <button
                     v-for="option in languageOptions"
                     :key="option.value"
@@ -195,190 +310,60 @@ onUnmounted(() => {
             </label>
 
             <label class="setting-row">
-              <span class="setting-title">{{ t("settings.general.theme") }}</span>
-              <span class="setting-description">{{ t("settings.general.themeDescription") }}</span>
-              <span class="select-field">
-                <button type="button" class="select-trigger" @click="toggleSelect('theme')">
-                  {{ selectedThemeLabel }}
-                  <ChevronDown aria-hidden="true" />
-                </button>
-                <span v-if="openSelect === 'theme'" class="select-menu" role="listbox">
-                  <button
-                    v-for="option in themeOptions"
-                    :key="option.value"
-                    type="button"
-                    :class="{ 'is-selected': theme === option.value }"
-                    role="option"
-                    :aria-selected="theme === option.value"
-                    @click="selectTheme(option.value)"
-                  >
-                    {{ option.label }}
-                  </button>
-                </span>
-              </span>
-            </label>
-          </div>
-
-          <div v-else-if="activeTab === 'cards'" class="settings-panel">
-            <section class="setting-row">
-              <span class="setting-title">{{ t("settings.cards.defaultKind") }}</span>
-              <span class="setting-description">{{ t("settings.cards.defaultKindDescription") }}</span>
-              <div class="segmented-control" :aria-label="t('settings.cards.defaultKind')">
-                <button
-                  v-for="kind in ['词语', '句子', '段落']"
-                  :key="kind"
-                  type="button"
-                  :class="{ 'is-active': defaultKind === kind }"
-                  @click="defaultKind = kind as NoteKind"
-                >
-                  {{ translateNoteKind(kind) }}
-                </button>
-              </div>
-            </section>
-
-            <label class="setting-row range-row">
-              <span class="setting-title">{{ t("settings.cards.cardWidth") }}</span>
-              <span class="setting-description">{{ t("settings.cards.cardWidthDescription") }}</span>
-              <span class="range-control">
-                <input
-                  v-model.number="cardWidth"
-                  type="range"
-                  min="180"
-                  max="320"
-                  step="10"
-                  :style="cardWidthRangeStyle"
-                />
-                <output>{{ cardWidth }}px</output>
-              </span>
-            </label>
-
-            <label class="setting-row range-row">
-              <span class="setting-title">{{ t("settings.cards.cardSpacing") }}</span>
-              <span class="setting-description">{{ t("settings.cards.cardSpacingDescription") }}</span>
-              <span class="range-control">
-                <input
-                  v-model.number="cardSpacing"
-                  type="range"
-                  min="8"
-                  max="28"
-                  step="2"
-                  :style="cardSpacingRangeStyle"
-                />
-                <output>{{ cardSpacing }}px</output>
-              </span>
-            </label>
-
-            <section class="setting-row">
-              <span class="setting-title setting-title--caps">{{ t("settings.cards.preview") }}</span>
-              <div
-                class="card-preview-strip"
-                :style="{ gap: `${cardSpacing}px`, '--preview-card-width': `${cardWidth}px` }"
-              >
-                <div
-                  v-for="note in previewNotes"
-                  :key="note.id"
-                  class="card-preview-frame"
-                >
-                  <NoteCard :note="note" />
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <div v-else-if="activeTab === 'storage'" class="settings-panel">
-            <label class="setting-row">
               <span class="setting-title">{{ t("settings.storage.path") }}</span>
               <span class="setting-description">{{ t("settings.storage.pathDescription") }}</span>
               <span class="path-row">
-                <input v-model="savePath" type="text" />
-                <button type="button">{{ t("settings.storage.choose") }}</button>
-                <button type="button">{{ t("settings.storage.reveal") }}</button>
+                <input :value="dataDir" type="text" readonly />
+                <button type="button" :disabled="isMigratingDataDir" @click="chooseAndMigrateDataDir">
+                  {{ t("settings.storage.choose") }}
+                </button>
+                <button type="button" :disabled="isMigratingDataDir" @click="revealCurrentDataDir">
+                  {{ t("settings.storage.reveal") }}
+                </button>
               </span>
+              <span v-if="storageMessage" class="setting-description">{{ storageMessage }}</span>
             </label>
 
             <section class="setting-row">
-              <span class="setting-title">{{ t("settings.storage.contents") }}</span>
-              <span class="setting-description">{{ t("settings.storage.contentsDescription") }}</span>
-              <p class="storage-stat">{{ t("settings.storage.contentsStat") }}</p>
-              <p class="storage-stat storage-stat--muted">{{ t("settings.storage.contentsMuted") }}</p>
+              <span class="setting-title">{{ t("settings.general.checkUpdates") }}</span>
+              <div class="update-row update-row--inline">
+                <button type="button">{{ t("settings.general.checkUpdates") }}</button>
+                <span>{{ t("settings.general.latest") }}</span>
+              </div>
             </section>
           </div>
 
           <div v-else-if="activeTab === 'shortcuts'" class="settings-panel">
-            <section class="setting-row">
-              <span class="setting-title">{{ t("settings.shortcuts.titleTitle") }}</span>
-              <span class="setting-description">
-                {{ t("settings.shortcuts.titleDescription") }}
-              </span>
+            <section v-for="item in shortcutItems" :key="item.action" class="setting-row">
+              <span class="setting-title">{{ item.title }}</span>
+              <span class="setting-description">{{ item.description }}</span>
               <span class="shortcut-row">
-                <kbd v-for="key in shortcutKeysTitle" :key="key">{{ key }}</kbd>
-                <button type="button">{{ t("settings.shortcuts.change") }}</button>
-                <button type="button">{{ t("settings.shortcuts.reset") }}</button>
+                <span v-if="capturingHotkey !== item.action" class="shortcut-keys">
+                  <kbd v-for="key in formatHotkeyParts(item.hotkey)" :key="key">{{ key }}</kbd>
+                </span>
+                <input
+                  v-else
+                  v-model="hotkeyDraft"
+                  class="shortcut-capture"
+                  type="text"
+                  :data-hotkey-capture="item.action"
+                  maxlength="16"
+                  @blur="cancelHotkeyCapture"
+                  @keydown="handleHotkeyCaptureKeydown(item.action, $event)"
+                />
+                <button type="button" @click="beginHotkeyCapture(item.action)">
+                  {{ t("settings.shortcuts.change") }}
+                </button>
+                <button type="button" @click="resetShortcut(item.action)">
+                  {{ t("settings.shortcuts.reset") }}
+                </button>
               </span>
-            </section>
-
-            <section class="setting-row">
-              <span class="setting-title">{{ t("settings.shortcuts.contentTitle") }}</span>
-              <span class="setting-description">
-                {{ t("settings.shortcuts.contentDescription") }}
-              </span>
-              <span class="shortcut-row">
-                <kbd v-for="key in shortcutKeysContent" :key="key">{{ key }}</kbd>
-                <button type="button">{{ t("settings.shortcuts.change") }}</button>
-                <button type="button">{{ t("settings.shortcuts.reset") }}</button>
-              </span>
-            </section>
-
-            <section class="setting-row">
-              <span class="setting-title">{{ t("settings.shortcuts.paragraphTitle") }}</span>
-              <span class="setting-description">
-                {{ t("settings.shortcuts.paragraphDescription") }}
-              </span>
-              <span class="shortcut-row">
-                <kbd v-for="key in shortcutKeysParagraph" :key="key">{{ key }}</kbd>
-                <button type="button">{{ t("settings.shortcuts.change") }}</button>
-                <button type="button">{{ t("settings.shortcuts.reset") }}</button>
+              <span v-if="shortcutMessages[item.action]" class="setting-description">
+                {{ shortcutMessages[item.action] }}
               </span>
             </section>
           </div>
 
-          <div v-else class="settings-panel about-panel">
-            <section class="about-hero">
-              <div class="app-mark" aria-hidden="true">简</div>
-              <div>
-                <h3>ESnip · 简摘</h3>
-                <p>{{ t("settings.about.meta", { version: appVersion }) }}</p>
-              </div>
-            </section>
-
-            <p class="about-copy">
-              {{ t("settings.about.copy") }}
-            </p>
-
-            <section class="feature-grid" :aria-label="t('settings.about.features')">
-              <div>
-                <h4>{{ t("settings.about.featureCards") }}</h4>
-                <p>{{ t("settings.about.featureCardsCopy") }}</p>
-              </div>
-              <div>
-                <h4>{{ t("settings.about.featureSearch") }}</h4>
-                <p>{{ t("settings.about.featureSearchCopy") }}</p>
-              </div>
-              <div>
-                <h4>{{ t("settings.about.featureQuickCapture") }}</h4>
-                <p>{{ t("settings.about.featureQuickCaptureCopy") }}</p>
-              </div>
-              <div>
-                <h4>{{ t("settings.about.featureLocal") }}</h4>
-                <p>{{ t("settings.about.featureLocalCopy") }}</p>
-              </div>
-            </section>
-
-            <div class="update-row">
-              <button type="button">{{ t("settings.about.checkUpdates") }}</button>
-              <span>{{ t("settings.about.latest") }}</span>
-            </div>
-          </div>
         </section>
       </div>
     </div>

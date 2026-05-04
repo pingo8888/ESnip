@@ -27,7 +27,6 @@
 .back-button,
 .icon-button,
 .settings-sidebar button,
-.segmented-control button,
 .path-row button,
 .shortcut-row button,
 .update-row button {
@@ -270,80 +269,6 @@
   background: rgba(218, 207, 188, 0.38);
 }
 
-.segmented-control {
-  display: inline-flex;
-  width: fit-content;
-  border: 1px solid var(--line);
-}
-
-.segmented-control button {
-  height: 32px;
-  padding: 0 18px;
-  color: #3e372f;
-  background: rgba(255, 254, 250, 0.55);
-  font-size: 0.88rem;
-}
-
-.segmented-control button + button {
-  border-left: 1px solid var(--line);
-}
-
-.segmented-control button.is-active {
-  color: #fffaf2;
-  background: #2f2b25;
-}
-
-.range-control {
-  display: grid;
-  width: min(420px, 100%);
-  grid-template-columns: minmax(0, 1fr) 64px;
-  gap: 16px;
-  align-items: center;
-}
-
-.range-control input {
-  width: 100%;
-  height: 18px;
-  appearance: none;
-  background: transparent;
-}
-
-.range-control input::-webkit-slider-runnable-track {
-  height: 2px;
-  background:
-    linear-gradient(#2f2b25, #2f2b25) 0 0 / var(--range-fill, 50%) 100% no-repeat,
-    #e2d8c8;
-}
-
-.range-control input::-webkit-slider-thumb {
-  width: 14px;
-  height: 14px;
-  margin-top: -6px;
-  appearance: none;
-  border: 1px solid #2f2b25;
-  background: #fbfaf6;
-}
-
-.range-control input::-moz-range-track {
-  height: 2px;
-  background: #e2d8c8;
-}
-
-.range-control input::-moz-range-progress {
-  height: 2px;
-  background: #2f2b25;
-}
-
-.range-control input::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border: 1px solid #2f2b25;
-  border-radius: 0;
-  background: #fbfaf6;
-}
-
-.range-control output,
-.storage-stat,
 .shortcut-row kbd,
 .update-row span {
   color: #5f554b;
@@ -351,27 +276,12 @@
   font-size: 0.88rem;
 }
 
-.card-preview-strip {
-  display: grid;
-  width: 100%;
-  max-width: 100%;
-  grid-template-columns: repeat(2, minmax(0, var(--preview-card-width, 210px)));
-  justify-content: start;
-  overflow: hidden;
-  border: 1px solid rgba(228, 220, 207, 0.72);
-  padding: 20px;
-  background: rgba(255, 254, 250, 0.24);
-}
-
-.card-preview-frame {
-  width: var(--preview-card-width, 210px);
-}
-
 .path-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(220px, 420px) max-content max-content;
   gap: 10px;
   align-items: center;
+  justify-content: start;
 }
 
 .path-row input {
@@ -386,14 +296,7 @@
   color: #3e372f;
   background: rgba(255, 254, 250, 0.58);
   font-size: 0.9rem;
-}
-
-.storage-stat {
-  margin: 6px 0 0;
-}
-
-.storage-stat--muted {
-  color: #9a8f83;
+  white-space: nowrap;
 }
 
 .shortcut-row {
@@ -402,6 +305,12 @@
   gap: 8px;
   align-items: center;
   margin-top: 6px;
+}
+
+.shortcut-keys {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
 }
 
 .shortcut-row kbd {
@@ -414,63 +323,15 @@
   font-weight: 700;
 }
 
-.about-panel {
-  gap: 22px;
-}
-
-.about-hero {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.app-mark {
-  display: grid;
-  width: 64px;
-  height: 64px;
-  place-items: center;
+.shortcut-capture {
+  width: 128px;
+  height: 36px;
   border: 1px solid var(--line);
-  background: rgba(255, 254, 250, 0.55);
-  color: #15120f;
-  font-size: 2.2rem;
-}
-
-.about-hero h3 {
-  margin: 0;
-  color: #15120f;
-  font-size: 2rem;
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: -0.08em;
-}
-
-.about-hero p,
-.about-copy,
-.feature-grid p {
-  margin: 0;
-  color: #7d7267;
+  padding: 0 12px;
+  color: var(--text);
+  background: rgba(255, 254, 250, 0.72);
   font-family: "Gill Sans", "Trebuchet MS", sans-serif;
   font-size: 0.94rem;
-  line-height: 1.45;
-}
-
-.about-copy {
-  color: #3b352e;
-  font-family: inherit;
-  font-size: 1rem;
-}
-
-.feature-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 22px 34px;
-}
-
-.feature-grid h4 {
-  margin: 0 0 5px;
-  color: #15120f;
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
-  font-size: 0.95rem;
 }
 
 .update-row {
@@ -479,6 +340,11 @@
   gap: 14px;
   border-top: 1px solid var(--line);
   padding-top: 18px;
+}
+
+.update-row--inline {
+  border-top: 0;
+  padding-top: 6px;
 }
 
 .update-row button {
@@ -519,7 +385,4 @@
     grid-template-columns: 1fr;
   }
 
-  .feature-grid {
-    grid-template-columns: 1fr;
-  }
 }

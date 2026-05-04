@@ -1,14 +1,20 @@
 use std::{
     fs,
+    path::Path,
     time::{SystemTime, UNIX_EPOCH},
 };
 
 use rusqlite::{params, params_from_iter, types::Value, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager, Runtime};
+use tauri::{AppHandle, Runtime};
 use uuid::Uuid;
 
 use crate::core::text::{build_fts_query, build_like_pattern, clean_optional};
+use crate::store::settings::current_data_dir;
+
+pub(crate) const DB_FILE_NAME: &str = "esnip.sqlite3";
+pub(crate) const DB_WAL_FILE_NAME: &str = "esnip.sqlite3-wal";
+pub(crate) const DB_SHM_FILE_NAME: &str = "esnip.sqlite3-shm";
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -59,13 +65,15 @@ pub(crate) struct UpdateNoteInput {
 }
 
 pub(crate) fn init_connection<R: Runtime>(app: &AppHandle<R>) -> Result<Connection, String> {
-    let app_data_dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|error| error.to_string())?;
-    fs::create_dir_all(&app_data_dir).map_err(|error| error.to_string())?;
+    let data_dir = current_data_dir(app)?;
 
-    let db_path = app_data_dir.join("esnip.sqlite3");
+    open_connection_at_dir(&data_dir)
+}
+
+pub(crate) fn open_connection_at_dir(data_dir: &Path) -> Result<Connection, String> {
+    fs::create_dir_all(data_dir).map_err(|error| error.to_string())?;
+
+    let db_path = data_dir.join(DB_FILE_NAME);
     let conn = Connection::open(db_path).map_err(|error| error.to_string())?;
 
     conn.pragma_update(None, "journal_mode", "WAL")
@@ -128,7 +136,11 @@ pub(crate) fn list_notes_page(
     Ok(NotesPage { notes, next_cursor })
 }
 
-pub(crate) fn search_notes(conn: &Connection, query: String, limit: Option<i64>) -> Result<NotesPage, String> {
+pub(crate) fn search_notes(
+    conn: &Connection,
+    query: String,
+    limit: Option<i64>,
+) -> Result<NotesPage, String> {
     let page_size = limit.unwrap_or(80).clamp(1, 100);
     let parsed_query = parse_search_query(&query);
 
@@ -179,7 +191,11 @@ pub(crate) fn search_notes(conn: &Connection, query: String, limit: Option<i64>)
     })
 }
 
-pub(crate) fn list_tags(conn: &Connection, prefix: String, limit: Option<i64>) -> Result<Vec<String>, String> {
+pub(crate) fn list_tags(
+    conn: &Connection,
+    prefix: String,
+    limit: Option<i64>,
+) -> Result<Vec<String>, String> {
     let page_size = limit.unwrap_or(8).clamp(1, 20);
     let cleaned_prefix = prefix.trim().trim_start_matches('#').trim();
     let like_pattern = build_like_pattern(cleaned_prefix);
@@ -195,7 +211,10 @@ pub(crate) fn list_tags(conn: &Connection, prefix: String, limit: Option<i64>) -
         )
         .map_err(|error| error.to_string())?;
 
-    let tags = stmt.query_map(params![cleaned_prefix, like_pattern, page_size], |row| row.get::<_, String>(0))
+    let tags = stmt
+        .query_map(params![cleaned_prefix, like_pattern, page_size], |row| {
+            row.get::<_, String>(0)
+        })
         .map_err(|error| error.to_string())?
         .collect::<rusqlite::Result<Vec<_>>>()
         .map_err(|error| error.to_string());
@@ -203,7 +222,10 @@ pub(crate) fn list_tags(conn: &Connection, prefix: String, limit: Option<i64>) -
     tags
 }
 
-pub(crate) fn find_note_by_title(conn: &Connection, title: String) -> Result<Option<NoteDto>, String> {
+pub(crate) fn find_note_by_title(
+    conn: &Connection,
+    title: String,
+) -> Result<Option<NoteDto>, String> {
     let Some(clean_title) = clean_optional(Some(title)) else {
         return Ok(None);
     };
@@ -266,7 +288,12 @@ pub(crate) fn delete_note(conn: &Connection, id: String) -> Result<(), String> {
     Ok(())
 }
 
-fn search_notes_like(conn: &Connection, query: &str, tags: &[String], page_size: i64) -> Result<NotesPage, String> {
+fn search_notes_like(
+    conn: &Connection,
+    query: &str,
+    tags: &[String],
+    page_size: i64,
+) -> Result<NotesPage, String> {
     let like_pattern = build_like_pattern(query);
     let tag_filter_sql = build_tag_filter_sql("notes", tags.len(), 2);
     let mut values = Vec::with_capacity(2 + tags.len());
@@ -274,18 +301,16 @@ fn search_notes_like(conn: &Connection, query: &str, tags: &[String], page_size:
     values.extend(tags.iter().cloned().map(Value::Text));
     values.push(Value::Integer(page_size));
     let mut stmt = conn
-        .prepare(
-            &format!(
-                "SELECT id, title, content, kind, tone, tags_json, created_at, updated_at
+        .prepare(&format!(
+            "SELECT id, title, content, kind, tone, tags_json, created_at, updated_at
              FROM notes
              WHERE (COALESCE(title, '') LIKE ?1 ESCAPE '\\'
                 OR COALESCE(content, '') LIKE ?1 ESCAPE '\\')
                {tag_filter_sql}
              ORDER BY created_at DESC, id DESC
              LIMIT ?{}",
-                tags.len() + 2
-            ),
-        )
+            tags.len() + 2
+        ))
         .map_err(|error| error.to_string())?;
 
     let notes = collect_notes(
@@ -299,23 +324,25 @@ fn search_notes_like(conn: &Connection, query: &str, tags: &[String], page_size:
     })
 }
 
-fn search_notes_by_tags(conn: &Connection, tags: &[String], page_size: i64) -> Result<NotesPage, String> {
+fn search_notes_by_tags(
+    conn: &Connection,
+    tags: &[String],
+    page_size: i64,
+) -> Result<NotesPage, String> {
     let tag_filter_sql = build_tag_filter_sql("notes", tags.len(), 1);
     let mut values = tags.iter().cloned().map(Value::Text).collect::<Vec<_>>();
     values.push(Value::Integer(page_size));
 
     let mut stmt = conn
-        .prepare(
-            &format!(
-                "SELECT id, title, content, kind, tone, tags_json, created_at, updated_at
+        .prepare(&format!(
+            "SELECT id, title, content, kind, tone, tags_json, created_at, updated_at
                  FROM notes
                  WHERE 1 = 1
                    {tag_filter_sql}
                  ORDER BY created_at DESC, id DESC
                  LIMIT ?{}",
-                tags.len() + 1
-            ),
-        )
+            tags.len() + 1
+        ))
         .map_err(|error| error.to_string())?;
 
     let notes = collect_notes(
@@ -350,8 +377,14 @@ fn parse_search_query(query: &str) -> ParsedSearchQuery {
     let mut tags = Vec::new();
 
     for term in query.split_whitespace() {
-        if let Some(tag) = term.strip_prefix('#').and_then(|value| clean_search_tag(value)) {
-            if !tags.iter().any(|item: &String| item.eq_ignore_ascii_case(&tag)) {
+        if let Some(tag) = term
+            .strip_prefix('#')
+            .and_then(|value| clean_search_tag(value))
+        {
+            if !tags
+                .iter()
+                .any(|item: &String| item.eq_ignore_ascii_case(&tag))
+            {
                 tags.push(tag);
             }
         } else {
@@ -366,7 +399,10 @@ fn parse_search_query(query: &str) -> ParsedSearchQuery {
 }
 
 fn clean_search_tag(value: &str) -> Option<String> {
-    let tag = value.trim().trim_matches(|ch: char| ch == ',' || ch == '，').trim();
+    let tag = value
+        .trim()
+        .trim_matches(|ch: char| ch == ',' || ch == '，')
+        .trim();
 
     if tag.is_empty() {
         None

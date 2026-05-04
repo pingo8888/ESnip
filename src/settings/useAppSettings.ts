@@ -1,0 +1,106 @@
+import { computed, ref } from "vue";
+import type { Locale } from "../i18n/types";
+import {
+  getAppSettings,
+  updateAppSettings,
+  type AppSettings,
+  type HotkeyAction,
+  type HotkeySettings,
+} from "./appSettingsRepository";
+
+const DEFAULT_HOTKEYS: HotkeySettings = {
+  content: "Alt+S",
+  paragraph: "Alt+P",
+  title: "Alt+W",
+};
+
+const DEFAULT_SETTINGS: AppSettings = {
+  dataDir: "",
+  hotkeys: { ...DEFAULT_HOTKEYS },
+  locale: "zh-CN",
+};
+
+const settings = ref<AppSettings>({ ...DEFAULT_SETTINGS });
+let initialized = false;
+
+export async function initAppSettings() {
+  if (initialized) {
+    return settings.value;
+  }
+
+  initialized = true;
+
+  try {
+    settings.value = normalizeSettings(await getAppSettings());
+  } catch (error) {
+    console.error("Failed to load app settings", error);
+  }
+
+  return settings.value;
+}
+
+export function useAppSettings() {
+  return {
+    dataDir: computed(() => settings.value.dataDir),
+    hotkeys: computed(() => settings.value.hotkeys),
+    locale: computed(() => settings.value.locale),
+    replaceSettings,
+    resetHotkey,
+    setHotkey,
+    setLocale,
+  };
+}
+
+export async function setLocale(locale: Locale) {
+  await saveSettings({ locale });
+}
+
+export async function setHotkey(action: HotkeyAction, hotkey: string) {
+  await saveSettings({
+    hotkeys: {
+      ...settings.value.hotkeys,
+      [action]: hotkey,
+    },
+  });
+}
+
+export async function resetHotkey(action: HotkeyAction) {
+  await setHotkey(action, DEFAULT_HOTKEYS[action]);
+}
+
+async function saveSettings(patch: Partial<AppSettings>) {
+  const nextSettings = normalizeSettings({
+    ...settings.value,
+    ...patch,
+  });
+
+  settings.value = nextSettings;
+
+  try {
+    settings.value = normalizeSettings(await updateAppSettings(nextSettings));
+  } catch (error) {
+    console.error("Failed to save app settings", error);
+    settings.value = normalizeSettings(await getAppSettings());
+    throw error;
+  }
+}
+
+function replaceSettings(nextSettings: AppSettings) {
+  settings.value = normalizeSettings(nextSettings);
+}
+
+function normalizeSettings(value: AppSettings): AppSettings {
+  return {
+    dataDir: value.dataDir ?? "",
+    hotkeys: normalizeHotkeys(value.hotkeys),
+    locale: value.locale === "en-US" ? "en-US" : "zh-CN",
+  };
+}
+
+function normalizeHotkeys(hotkeys: Partial<HotkeySettings> | undefined): HotkeySettings {
+  return {
+    content: hotkeys?.content || DEFAULT_HOTKEYS.content,
+    paragraph: hotkeys?.paragraph || DEFAULT_HOTKEYS.paragraph,
+    title: hotkeys?.title || DEFAULT_HOTKEYS.title,
+  };
+}
