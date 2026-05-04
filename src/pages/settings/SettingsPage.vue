@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from "vue";
+import { getVersion } from "@tauri-apps/api/app";
 import { ArrowLeft, ChevronDown, Settings } from "lucide-vue-next";
 import { useI18n } from "../../i18n";
 import {
@@ -15,8 +16,6 @@ import type { Locale, MessageKey } from "../../i18n/types";
 
 type SettingsTab = "general" | "shortcuts";
 
-const appVersion = "0.1.0";
-
 const tabs: SettingsTab[] = ["general", "shortcuts"];
 const tabLabelKeys: Record<SettingsTab, MessageKey> = {
   general: "settings.tabs.general",
@@ -24,6 +23,7 @@ const tabLabelKeys: Record<SettingsTab, MessageKey> = {
 };
 
 const activeTab = ref<SettingsTab>("general");
+const appVersion = ref("");
 const isLanguageSelectOpen = ref(false);
 const isMigratingDataDir = ref(false);
 const capturingHotkey = ref<HotkeyAction | null>(null);
@@ -238,8 +238,17 @@ function handleSettingsKeydown(event: KeyboardEvent) {
   emit("back");
 }
 
+async function loadAppVersion() {
+  try {
+    appVersion.value = await getVersion();
+  } catch (error) {
+    console.warn("Failed to load app version", error);
+  }
+}
+
 onMounted(() => {
   window.addEventListener("keydown", handleSettingsKeydown, true);
+  void loadAppVersion();
 });
 
 onUnmounted(() => {
