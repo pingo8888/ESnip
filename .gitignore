@@ -25,4 +25,8 @@ dist-ssr
 
 # AI
 .claude
+
+# Release
 UPDATE_RELEASE.md
+release/
+src-tauri/target/

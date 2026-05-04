@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
+    "bump-version": "node bump-version.mjs",
     "preview": "vite preview",
+    "release:build": "powershell -ExecutionPolicy Bypass -File ./build-release.ps1",
     "tauri": "tauri",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
