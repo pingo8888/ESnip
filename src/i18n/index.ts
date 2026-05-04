@@ -1,5 +1,5 @@
 import { computed, readonly, ref } from "vue";
-import { getAppSettings, updateAppSettings } from "../settings/appSettingsRepository";
+import { getAppSettings, updateAppChromeTitle, updateAppSettings } from "../settings/appSettingsRepository";
 import { enUSMessages } from "./en-US";
 import type { Locale, TranslateParams } from "./types";
 import { supportedLocales } from "./types";
@@ -30,8 +30,10 @@ export async function initI18n() {
   try {
     const settings = await getAppSettings();
     currentLocale.value = normalizeLocale(settings.locale);
+    void syncAppChromeTitle();
   } catch (error) {
     console.error("Failed to load app locale", error);
+    void syncAppChromeTitle();
   }
 }
 
@@ -39,10 +41,12 @@ export async function setLocale(locale: Locale) {
   const nextLocale = normalizeLocale(locale);
 
   currentLocale.value = nextLocale;
+  void syncAppChromeTitle();
 
   try {
     const settings = await updateAppSettings({ locale: nextLocale });
     currentLocale.value = normalizeLocale(settings.locale);
+    void syncAppChromeTitle();
   } catch (error) {
     console.error("Failed to save app locale", error);
   }
@@ -118,3 +122,11 @@ function normalizeLocale(locale: string): Locale {
 const selectedLanguageLabel = computed(
   () => languageOptions.find((option) => option.value === currentLocale.value)?.label ?? languageOptions[0].label,
 );
+
+async function syncAppChromeTitle() {
+  try {
+    await updateAppChromeTitle(t("app.name"), t("tray.show"), t("tray.quit"));
+  } catch (error) {
+    console.error("Failed to update app chrome title", error);
+  }
+}

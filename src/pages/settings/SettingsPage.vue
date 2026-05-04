@@ -29,6 +29,7 @@ const cardSpacing = ref(14);
 const savePath = ref("~/Documents/ESnip");
 const shortcutKeysTitle = ["Alt", "W"];
 const shortcutKeysContent = ["Alt", "S"];
+const shortcutKeysParagraph = ["Alt", "P"];
 const { languageOptions, locale, selectedLanguageLabel, setLocale, t, translateNoteKind } = useI18n();
 
 const emit = defineEmits<{
@@ -323,6 +324,18 @@ onUnmounted(() => {
               </span>
               <span class="shortcut-row">
                 <kbd v-for="key in shortcutKeysContent" :key="key">{{ key }}</kbd>
+                <button type="button">{{ t("settings.shortcuts.change") }}</button>
+                <button type="button">{{ t("settings.shortcuts.reset") }}</button>
+              </span>
+            </section>
+
+            <section class="setting-row">
+              <span class="setting-title">{{ t("settings.shortcuts.paragraphTitle") }}</span>
+              <span class="setting-description">
+                {{ t("settings.shortcuts.paragraphDescription") }}
+              </span>
+              <span class="shortcut-row">
+                <kbd v-for="key in shortcutKeysParagraph" :key="key">{{ key }}</kbd>
                 <button type="button">{{ t("settings.shortcuts.change") }}</button>
                 <button type="button">{{ t("settings.shortcuts.reset") }}</button>
               </span>

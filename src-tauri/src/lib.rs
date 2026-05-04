@@ -6,7 +6,7 @@ use crate::app::{
     bootstrap::setup_app,
     commands::{
         create_note, delete_note, find_note_by_title, get_app_settings, list_notes_page, list_tags, search_notes,
-        update_app_settings, update_note,
+        update_app_chrome_title, update_app_settings, update_note,
     },
     platform::handle_window_event,
     state::{AppQuitState, HotkeyShutdown},
@@ -29,6 +29,7 @@ pub fn run() {
             update_note,
             delete_note,
             get_app_settings,
+            update_app_chrome_title,
             update_app_settings
         ])
         .run(tauri::generate_context!())

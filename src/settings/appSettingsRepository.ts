@@ -12,3 +12,7 @@ export async function getAppSettings(): Promise<AppSettings> {
 export async function updateAppSettings(settings: AppSettings): Promise<AppSettings> {
   return invoke<AppSettings>("update_app_settings", { settings });
 }
+
+export async function updateAppChromeTitle(title: string, showLabel: string, quitLabel: string): Promise<void> {
+  await invoke("update_app_chrome_title", { quitLabel, showLabel, title });
+}

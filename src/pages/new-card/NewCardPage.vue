@@ -13,6 +13,7 @@ const props = withDefaults(
     initialNote?: Note | null;
     initialTitle?: string;
     initialContent?: string;
+    initialKind?: NoteKind;
     mode?: "create" | "edit";
   }>(),
   {
@@ -21,6 +22,7 @@ const props = withDefaults(
     initialNote: null,
     initialTitle: "",
     initialContent: "",
+    initialKind: "词语",
     mode: "create",
   },
 );
@@ -107,9 +109,9 @@ function formatTagsInput(tags: string[]) {
 }
 
 watch(
-  () => [props.mode, props.initialNote, props.initialTitle, props.initialContent, props.draftKey] as const,
-  ([mode, note, initialTitle, initialContent]) => {
-    kind.value = note?.kind ?? "词语";
+  () => [props.mode, props.initialNote, props.initialTitle, props.initialContent, props.initialKind, props.draftKey] as const,
+  ([mode, note, initialTitle, initialContent, initialKind]) => {
+    kind.value = note?.kind ?? initialKind;
     tone.value = note?.tone ?? "sage";
     title.value = mode === "edit" ? (note?.title ?? "") : initialTitle;
     excerpt.value = mode === "edit" ? (note?.excerpt ?? "") : initialContent;

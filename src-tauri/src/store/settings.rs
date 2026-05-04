@@ -21,6 +21,12 @@ impl Default for AppSettings {
     }
 }
 
+impl AppSettings {
+    pub(crate) fn locale(&self) -> &str {
+        &self.locale
+    }
+}
+
 pub(crate) fn get_app_settings<R: Runtime>(app: &AppHandle<R>) -> Result<AppSettings, String> {
     let settings_path = settings_file_path(app)?;
 

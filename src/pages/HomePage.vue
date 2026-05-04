@@ -7,7 +7,7 @@ import { initI18n } from "../i18n";
 import DeleteNoteConfirm from "./home/DeleteNoteConfirm.vue";
 import HomeShellView from "./home/HomeShellView.vue";
 import HomePageView from "./home/HomePageView.vue";
-import type { Note, NoteInput, NoteUpdateInput } from "./home/noteTypes";
+import type { Note, NoteInput, NoteKind, NoteUpdateInput } from "./home/noteTypes";
 import { findNoteByTitle } from "./home/notesRepository";
 import { useNoteCollection } from "./home/useNoteCollection";
 import NewCardPage from "./new-card/NewCardPage.vue";
@@ -20,6 +20,7 @@ type QuickCapturePayload = {
 };
 type QuickCaptureContentPayload = {
   content?: string | null;
+  kind?: NoteKind | null;
 };
 
 const activePage = ref<ActivePage>("home");
@@ -29,6 +30,7 @@ const editingNote = ref<Note | null>(null);
 const deletingNote = ref<Note | null>(null);
 const newCardInitialTitle = ref("");
 const newCardInitialContent = ref("");
+const newCardInitialKind = ref<NoteKind>("词语");
 const newCardDraftKey = ref(0);
 const notesScrollEl = ref<HTMLElement | null>(null);
 const notesScrollWidth = ref(0);
@@ -96,10 +98,11 @@ function updateNotesScrollWidth() {
   notesScrollWidth.value = notesScrollEl.value?.clientWidth ?? 0;
 }
 
-function showNewCardPage(initialTitle = "", initialContent = "") {
+function showNewCardPage(initialTitle = "", initialContent = "", initialKind: NoteKind = "词语") {
   editingNote.value = null;
   newCardInitialTitle.value = initialTitle;
   newCardInitialContent.value = initialContent;
+  newCardInitialKind.value = initialKind;
   newCardDraftKey.value += 1;
   activePage.value = "new-card";
 }
@@ -151,7 +154,7 @@ async function handleQuickCapture(payload: QuickCapturePayload) {
 
 function handleQuickCaptureContent(payload: QuickCaptureContentPayload) {
   const content = payload.content?.trim() ?? "";
-  showNewCardPage("", content);
+  showNewCardPage("", content, payload.kind ?? "词语");
 }
 
 async function saveNewNote(note: NoteInput) {
@@ -267,6 +270,7 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
       :active="activePage === 'new-card'"
       :initial-title="newCardInitialTitle"
       :initial-content="newCardInitialContent"
+      :initial-kind="newCardInitialKind"
       mode="create"
       @cancel="showHomePage"
       @open-settings="showSettingsPage"

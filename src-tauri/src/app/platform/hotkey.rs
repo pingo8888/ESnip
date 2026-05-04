@@ -20,6 +20,7 @@ struct QuickCapturePayload {
 #[serde(rename_all = "camelCase")]
 struct QuickCaptureContentPayload {
     content: Option<String>,
+    kind: Option<String>,
 }
 
 #[cfg(target_os = "windows")]
@@ -119,10 +120,13 @@ where
 
         const HOTKEY_ID_TITLE: i32 = 1104;
         const HOTKEY_ID_CONTENT: i32 = 1105;
+        const HOTKEY_ID_PARAGRAPH: i32 = 1106;
         const VK_W: u32 = b'W' as u32;
         const VK_S: u32 = b'S' as u32;
+        const VK_P: u32 = b'P' as u32;
         let mut is_title_registered = false;
         let mut is_content_registered = false;
+        let mut is_paragraph_registered = false;
         let mut msg: MSG = unsafe { std::mem::zeroed() };
 
         // Ensure this thread owns a message queue before registering the hotkey.
@@ -140,6 +144,12 @@ where
             is_content_registered = true;
         }
 
+        if unsafe { RegisterHotKey(std::ptr::null_mut(), HOTKEY_ID_PARAGRAPH, MOD_ALT, VK_P) } == 0 {
+            eprintln!("注册全局快捷键 Alt+P 失败，可能已被其他程序占用");
+        } else {
+            is_paragraph_registered = true;
+        }
+
         while !shutdown.load(Ordering::Relaxed) {
             while unsafe { PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, PM_REMOVE) } != 0 {
                 if msg.message == WM_HOTKEY {
@@ -152,7 +162,20 @@ where
                     } else if msg.wParam == HOTKEY_ID_CONTENT as usize {
                         let content = capture_selected_text_from_system();
                         let _ = show_main_window(&app);
-                        if let Err(error) = app.emit_to("main", "quick-capture-content", QuickCaptureContentPayload { content }) {
+                        if let Err(error) = app.emit_to("main", "quick-capture-content", QuickCaptureContentPayload { content, kind: None }) {
+                            eprintln!("发送取词事件失败: {error}");
+                        }
+                    } else if msg.wParam == HOTKEY_ID_PARAGRAPH as usize {
+                        let content = capture_selected_text_from_system();
+                        let _ = show_main_window(&app);
+                        if let Err(error) = app.emit_to(
+                            "main",
+                            "quick-capture-content",
+                            QuickCaptureContentPayload {
+                                content,
+                                kind: Some("段落".to_string()),
+                            },
+                        ) {
                             eprintln!("发送取词事件失败: {error}");
                         }
                     }
@@ -167,6 +190,9 @@ where
         }
         if is_content_registered {
             let _ = unsafe { UnregisterHotKey(std::ptr::null_mut(), HOTKEY_ID_CONTENT) };
+        }
+        if is_paragraph_registered {
+            let _ = unsafe { UnregisterHotKey(std::ptr::null_mut(), HOTKEY_ID_PARAGRAPH) };
         }
     });
 }
