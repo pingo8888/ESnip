@@ -336,17 +336,19 @@ fn parse_search_query(query: &str) -> ParsedSearchQuery {
     let mut filters = SearchFilters::default();
 
     for term in query.split_whitespace() {
-        if let Some(filter) = term.strip_prefix("!#").and_then(clean_search_tag) {
+        if let Some(filter) = term.strip_prefix("!@").and_then(clean_search_tag) {
             if let Some(kind) = normalize_search_note_kind(&filter) {
                 push_unique_value(&mut filters.excluded_kinds, kind);
-            } else {
-                remove_value(&mut filters.included_tags, &filter);
-                push_unique_value(&mut filters.excluded_tags, filter);
             }
-        } else if let Some(filter) = term.strip_prefix('#').and_then(clean_search_tag) {
+        } else if let Some(filter) = term.strip_prefix('@').and_then(clean_search_tag) {
             if let Some(kind) = normalize_search_note_kind(&filter) {
                 push_unique_value(&mut filters.included_kinds, kind);
-            } else if !filters
+            }
+        } else if let Some(filter) = term.strip_prefix("!#").and_then(clean_search_tag) {
+            remove_value(&mut filters.included_tags, &filter);
+            push_unique_value(&mut filters.excluded_tags, filter);
+        } else if let Some(filter) = term.strip_prefix('#').and_then(clean_search_tag) {
+            if !filters
                 .excluded_tags
                 .iter()
                 .any(|item: &String| item.eq_ignore_ascii_case(&filter))

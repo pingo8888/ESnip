@@ -42,6 +42,10 @@ const sectionTitle = computed(() =>
 );
 const highlightTerms = computed(() => parseHighlightTerms(props.searchQuery));
 const noteKindSearchSuggestions = computed(() => noteKindDefinitions.map((definition) => t(definition.labelKey)));
+const searchStaticSuggestions = computed(() => ({
+  "!@": noteKindSearchSuggestions.value,
+  "@": noteKindSearchSuggestions.value,
+}));
 
 function openContextMenu(event: MouseEvent, note: Note) {
   const menuWidth = 198;
@@ -156,8 +160,8 @@ onUnmounted(() => {
         </span>
         <TagSuggestInput
           :model-value="searchQuery"
-          :priority-suggestions="noteKindSearchSuggestions"
-          :tag-prefixes="['!#', '#']"
+          :static-suggestions="searchStaticSuggestions"
+          :tag-prefixes="['!@', '!#', '@', '#']"
           type="search"
           :placeholder="t('home.searchPlaceholder')"
           @update:model-value="emit('updateSearchQuery', $event)"

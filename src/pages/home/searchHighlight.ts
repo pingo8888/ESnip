@@ -7,7 +7,10 @@ export function parseHighlightTerms(query: string) {
   const terms = query
     .trim()
     .split(/\s+/)
-    .filter((term) => term && !term.startsWith("#") && !term.startsWith("!#"));
+    .filter(
+      (term) =>
+        term && !term.startsWith("#") && !term.startsWith("!#") && !term.startsWith("@") && !term.startsWith("!@"),
+    );
   const uniqueTerms: string[] = [];
 
   for (const term of terms) {

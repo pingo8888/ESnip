@@ -31,7 +31,7 @@ const props = withDefaults(
   },
 );
 
-const noteKinds = noteKindDefinitions.map((definition) => definition.value);
+const noteKinds: NoteKind[] = noteKindDefinitions.map((definition) => definition.value);
 const noteTones: NoteTone[] = ["sage", "ochre", "clay", "ink"];
 
 const titleInputRef = ref<HTMLInputElement | null>(null);

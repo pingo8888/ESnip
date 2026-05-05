@@ -3,17 +3,19 @@ import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "../../i18n";
 import { listTags } from "../home/notesRepository";
 
+type SuggestionMap = Record<string, string[]>;
+
 const props = withDefaults(
   defineProps<{
     modelValue: string;
     placeholder?: string;
-    prioritySuggestions?: string[];
+    staticSuggestions?: SuggestionMap;
     tagPrefixes?: string[];
     type?: "search" | "text";
   }>(),
   {
     placeholder: "",
-    prioritySuggestions: () => [],
+    staticSuggestions: () => ({}),
     tagPrefixes: () => ["#"],
     type: "text",
   },
@@ -109,21 +111,22 @@ function scheduleSuggestions(value: string, cursor: number) {
   }
 
   suggestionTimer = setTimeout(() => {
-    void loadSuggestions(token.query);
+    void loadSuggestions(token);
   }, 120);
 }
 
-async function loadSuggestions(prefix: string) {
+async function loadSuggestions(token: { query: string; trigger: string }) {
   const requestId = ++requestSerial;
 
   try {
-    const tags = await listTags(prefix);
+    const staticSuggestions = props.staticSuggestions[token.trigger] ?? [];
+    const tags = staticSuggestions.length > 0 ? [] : await listTags(token.query);
 
     if (requestId !== requestSerial) {
       return;
     }
 
-    suggestions.value = buildSuggestions(prefix, tags);
+    suggestions.value = buildSuggestions(token, tags, staticSuggestions);
     highlightedIndex.value = Math.min(highlightedIndex.value, Math.max(suggestions.value.length - 1, 0));
   } catch (error) {
     console.error("Failed to load tag suggestions", error);
@@ -133,18 +136,20 @@ async function loadSuggestions(prefix: string) {
   }
 }
 
-function filterExistingTags(tags: string[]) {
-  const existingTags = parseExistingTags();
+function filterExistingSuggestions(trigger: string, suggestions: string[]) {
+  const existingSuggestions = parseExistingSuggestions(trigger);
 
-  return tags.filter((tag) => !existingTags.some((existingTag) => existingTag.toLowerCase() === tag.toLowerCase()));
+  return suggestions.filter(
+    (suggestion) => !existingSuggestions.some((existingSuggestion) => existingSuggestion.toLowerCase() === suggestion.toLowerCase()),
+  );
 }
 
-function buildSuggestions(prefix: string, tags: string[]) {
-  const normalizedPrefix = prefix.toLowerCase();
-  const prioritySuggestions = props.prioritySuggestions.filter((suggestion) =>
+function buildSuggestions(token: { query: string; trigger: string }, tags: string[], staticSuggestions: string[]) {
+  const normalizedPrefix = token.query.toLowerCase();
+  const matchedStaticSuggestions = staticSuggestions.filter((suggestion) =>
     suggestion.toLowerCase().startsWith(normalizedPrefix),
   );
-  const mergedSuggestions = [...prioritySuggestions, ...tags];
+  const mergedSuggestions = [...matchedStaticSuggestions, ...tags];
   const uniqueSuggestions: string[] = [];
 
   for (const suggestion of mergedSuggestions) {
@@ -153,26 +158,26 @@ function buildSuggestions(prefix: string, tags: string[]) {
     }
   }
 
-  return filterExistingTags(uniqueSuggestions);
+  return filterExistingSuggestions(token.trigger, uniqueSuggestions);
 }
 
-function parseExistingTags() {
+function parseExistingSuggestions(trigger: string) {
   const value = props.modelValue;
   const excludedStart = activeToken.value?.start ?? -1;
   const excludedEnd = activeToken.value?.end ?? -1;
-  const tags = new Set<string>();
-  const tagPattern = /#([^\s,，#]+)/g;
+  const suggestions = new Set<string>();
+  const suggestionPattern = new RegExp(`${escapeRegExp(trigger)}([^\\s,，#!@]+)`, "g");
   let match: RegExpExecArray | null;
 
-  while ((match = tagPattern.exec(value))) {
+  while ((match = suggestionPattern.exec(value))) {
     if (match.index >= excludedStart && match.index < excludedEnd) {
       continue;
     }
 
-    tags.add(match[1].trim());
+    suggestions.add(match[1].trim());
   }
 
-  return [...tags];
+  return [...suggestions];
 }
 
 function selectTag(tag: string) {
@@ -231,6 +236,10 @@ function findActiveTagToken(value: string, cursor: number) {
     start: tokenStart,
     trigger,
   };
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 watch(
