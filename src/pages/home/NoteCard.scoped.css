@@ -105,6 +105,16 @@
   letter-spacing: -0.07em;
 }
 
+.note-highlight {
+  color: #8f4b2f;
+  background: transparent;
+  text-decoration: underline;
+  text-decoration-color: rgba(143, 75, 47, 0.46);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.12em;
+  font-weight: 650;
+}
+
 .note-excerpt {
   user-select: text;
   margin: 0;

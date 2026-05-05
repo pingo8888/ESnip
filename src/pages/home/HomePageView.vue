@@ -6,6 +6,7 @@ import NoteCard from "./NoteCard.vue";
 import NoteContextMenu from "./NoteContextMenu.vue";
 import type { Note } from "./noteTypes";
 import TagSuggestInput from "../shared/TagSuggestInput.vue";
+import { parseHighlightTerms } from "./searchHighlight";
 
 const props = defineProps<{
   masonryColumns: Note[][];
@@ -37,6 +38,7 @@ const sectionTitle = computed(() =>
     ? t("home.searchResults", { count: props.resultCount })
     : t("home.cardsCount", { count: props.resultCount }),
 );
+const highlightTerms = computed(() => parseHighlightTerms(props.searchQuery));
 
 function openContextMenu(event: MouseEvent, note: Note) {
   const menuWidth = 198;
@@ -175,6 +177,7 @@ onUnmounted(() => {
               v-for="note in column"
               :key="note.id"
               context-menu-enabled
+              :highlight-terms="highlightTerms"
               :note="note"
               @open-context-menu="openContextMenu"
             />
