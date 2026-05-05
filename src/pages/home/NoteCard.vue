@@ -35,7 +35,12 @@ function splitParagraphs(value: string) {
 <template>
   <article
     class="note-card"
-    :class="[`note-card--${note.tone}`, { 'note-card--untitled': !note.title }]"
+    :class="[
+      `note-card--${note.tone}`,
+      {
+        'note-card--untitled': !note.title,
+      },
+    ]"
     @contextmenu.prevent="contextMenuEnabled && $emit('openContextMenu', $event, note)"
   >
     <div class="note-accent" aria-hidden="true"></div>

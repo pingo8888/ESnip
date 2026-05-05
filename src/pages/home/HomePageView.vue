@@ -33,6 +33,7 @@ const contextMenu = ref<{
   x: number;
   y: number;
 } | null>(null);
+const hasRequestedNearBottomLoad = ref(false);
 const sectionTitle = computed(() =>
   props.searchQuery.trim()
     ? t("home.searchResults", { count: props.resultCount })
@@ -93,7 +94,18 @@ function handleNotesScroll(event: Event) {
 
   const el = event.currentTarget as HTMLElement;
   const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+
+  if (distanceToBottom > 320) {
+    hasRequestedNearBottomLoad.value = false;
+    return;
+  }
+
+  if (hasRequestedNearBottomLoad.value) {
+    return;
+  }
+
   if (distanceToBottom <= 320) {
+    hasRequestedNearBottomLoad.value = true;
     emit("loadMoreNotes");
   }
 }
