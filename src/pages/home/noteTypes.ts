@@ -1,4 +1,4 @@
-export type NoteKind = "词语" | "句子" | "段落";
+export type NoteKind = "word" | "sentence" | "paragraph";
 
 export type NoteTone = "sage" | "ochre" | "clay" | "ink";
 

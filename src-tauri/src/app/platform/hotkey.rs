@@ -196,7 +196,7 @@ where
                             "quick-capture-content",
                             QuickCaptureContentPayload {
                                 content,
-                                kind: Some("句子".to_string()),
+                                kind: Some("sentence".to_string()),
                             },
                         ) {
                             eprintln!("发送取词事件失败: {error}");
@@ -209,7 +209,7 @@ where
                             "quick-capture-content",
                             QuickCaptureContentPayload {
                                 content,
-                                kind: Some("段落".to_string()),
+                                kind: Some("paragraph".to_string()),
                             },
                         ) {
                             eprintln!("发送取词事件失败: {error}");

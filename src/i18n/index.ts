@@ -78,15 +78,15 @@ export function translateError(error: unknown): string {
 }
 
 export function translateNoteKind(kind: string) {
-  if (kind === "词语") {
+  if (kind === "word" || kind === "词语") {
     return t("kind.word");
   }
 
-  if (kind === "句子") {
+  if (kind === "sentence" || kind === "句子") {
     return t("kind.sentence");
   }
 
-  if (kind === "段落") {
+  if (kind === "paragraph" || kind === "段落") {
     return t("kind.paragraph");
   }
 

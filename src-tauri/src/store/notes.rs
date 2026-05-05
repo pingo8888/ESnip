@@ -307,12 +307,13 @@ pub(crate) fn create_note(conn: &Connection, input: SaveNoteInput) -> Result<Not
     let id = Uuid::new_v4().to_string();
     let title = clean_optional(input.title);
     let excerpt = clean_optional(input.excerpt);
+    let kind = normalize_note_kind(&input.kind);
     let tags_json = serde_json::to_string(&input.tags).map_err(|error| error.to_string())?;
 
     conn.execute(
         "INSERT INTO notes (id, title, content, kind, tone, tags_json, created_at, updated_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-        params![id, title, excerpt, input.kind, input.tone, tags_json, now, now],
+        params![id, title, excerpt, kind, input.tone, tags_json, now, now],
     )
     .map_err(|error| error.to_string())?;
 
@@ -323,6 +324,7 @@ pub(crate) fn update_note(conn: &Connection, input: UpdateNoteInput) -> Result<N
     let now = now_millis();
     let title = clean_optional(input.title);
     let excerpt = clean_optional(input.excerpt);
+    let kind = normalize_note_kind(&input.kind);
     let tags_json = serde_json::to_string(&input.tags).map_err(|error| error.to_string())?;
 
     let updated = conn
@@ -330,7 +332,7 @@ pub(crate) fn update_note(conn: &Connection, input: UpdateNoteInput) -> Result<N
             "UPDATE notes
              SET title = ?1, content = ?2, kind = ?3, tone = ?4, tags_json = ?5, updated_at = ?6
              WHERE id = ?7",
-            params![title, excerpt, input.kind, input.tone, tags_json, now, input.id],
+            params![title, excerpt, kind, input.tone, tags_json, now, input.id],
         )
         .map_err(|error| error.to_string())?;
 
@@ -576,7 +578,17 @@ fn clean_search_tag(value: &str) -> Option<String> {
     }
 }
 
+fn normalize_note_kind(kind: &str) -> &'static str {
+    match kind {
+        "sentence" | "句子" => "sentence",
+        "paragraph" | "段落" => "paragraph",
+        "word" | "词语" => "word",
+        _ => "word",
+    }
+}
+
 fn init_schema(conn: &Connection) -> Result<(), String> {
+    migrate_note_kind_values(conn)?;
     migrate_fts_table(conn)?;
 
     conn.execute_batch(
@@ -585,7 +597,7 @@ fn init_schema(conn: &Connection) -> Result<(), String> {
             id TEXT PRIMARY KEY NOT NULL,
             title TEXT,
             content TEXT,
-            kind TEXT NOT NULL CHECK (kind IN ('词语', '句子', '段落')),
+            kind TEXT NOT NULL CHECK (kind IN ('word', 'sentence', 'paragraph')),
             tone TEXT NOT NULL CHECK (tone IN ('sage', 'ochre', 'clay', 'ink')),
             tags_json TEXT NOT NULL DEFAULT '[]',
             created_at INTEGER NOT NULL,
@@ -632,6 +644,111 @@ fn init_schema(conn: &Connection) -> Result<(), String> {
 
     rebuild_fts_index(conn)?;
 
+    Ok(())
+}
+
+fn migrate_note_kind_values(conn: &Connection) -> Result<(), String> {
+    if !notes_table_exists(conn)? {
+        return Ok(());
+    }
+
+    if note_kind_check_uses_chinese(conn)? {
+        rebuild_notes_table_with_english_kinds(conn)?;
+    } else {
+        normalize_existing_note_kind_values(conn)?;
+    }
+
+    Ok(())
+}
+
+fn notes_table_exists(conn: &Connection) -> Result<bool, String> {
+    conn.query_row(
+        "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'notes')",
+        [],
+        |row| row.get::<_, i64>(0),
+    )
+    .map(|value| value != 0)
+    .map_err(|error| error.to_string())
+}
+
+fn note_kind_check_uses_chinese(conn: &Connection) -> Result<bool, String> {
+    let sql = conn
+        .query_row(
+            "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'notes'",
+            [],
+            |row| row.get::<_, String>(0),
+        )
+        .optional()
+        .map_err(|error| error.to_string())?
+        .unwrap_or_default();
+
+    Ok(sql.contains("'词语'") || sql.contains("'句子'") || sql.contains("'段落'"))
+}
+
+fn rebuild_notes_table_with_english_kinds(conn: &Connection) -> Result<(), String> {
+    conn.execute_batch(
+        "
+        DROP TRIGGER IF EXISTS notes_ai;
+        DROP TRIGGER IF EXISTS notes_ad;
+        DROP TRIGGER IF EXISTS notes_au;
+        DROP TABLE IF EXISTS notes_fts;
+        DROP TABLE IF EXISTS notes_legacy_kind;
+        ALTER TABLE notes RENAME TO notes_legacy_kind;
+
+        CREATE TABLE notes (
+            id TEXT PRIMARY KEY NOT NULL,
+            title TEXT,
+            content TEXT,
+            kind TEXT NOT NULL CHECK (kind IN ('word', 'sentence', 'paragraph')),
+            tone TEXT NOT NULL CHECK (tone IN ('sage', 'ochre', 'clay', 'ink')),
+            tags_json TEXT NOT NULL DEFAULT '[]',
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            source TEXT
+        );
+
+        INSERT INTO notes (id, title, content, kind, tone, tags_json, created_at, updated_at, source)
+        SELECT id,
+               title,
+               content,
+               CASE kind
+                   WHEN '词语' THEN 'word'
+                   WHEN '句子' THEN 'sentence'
+                   WHEN '段落' THEN 'paragraph'
+                   WHEN 'word' THEN 'word'
+                   WHEN 'sentence' THEN 'sentence'
+                   WHEN 'paragraph' THEN 'paragraph'
+                   ELSE 'word'
+               END,
+               tone,
+               tags_json,
+               created_at,
+               updated_at,
+               source
+          FROM notes_legacy_kind;
+
+        DROP TABLE notes_legacy_kind;
+        ",
+    )
+    .map_err(|error| error.to_string())
+}
+
+fn normalize_existing_note_kind_values(conn: &Connection) -> Result<(), String> {
+    conn.execute_batch(
+        "
+        UPDATE notes
+           SET kind = CASE kind
+               WHEN '词语' THEN 'word'
+               WHEN '句子' THEN 'sentence'
+               WHEN '段落' THEN 'paragraph'
+               WHEN 'word' THEN 'word'
+               WHEN 'sentence' THEN 'sentence'
+               WHEN 'paragraph' THEN 'paragraph'
+               ELSE 'word'
+           END;
+        ",
+    )
+    .map_err(|error| error.to_string())?;
     Ok(())
 }
 
@@ -698,7 +815,7 @@ fn map_note_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<NoteDto> {
         id: row.get(0)?,
         title: row.get(1)?,
         excerpt: row.get(2)?,
-        kind: row.get(3)?,
+        kind: normalize_note_kind(&row.get::<_, String>(3)?).to_string(),
         tone: row.get(4)?,
         tags,
         created_at: row.get(6)?,

@@ -33,7 +33,7 @@ const editingNote = ref<Note | null>(null);
 const deletingNote = ref<Note | null>(null);
 const newCardInitialTitle = ref("");
 const newCardInitialContent = ref("");
-const newCardInitialKind = ref<NoteKind>("词语");
+const newCardInitialKind = ref<NoteKind>("word");
 const newCardDraftKey = ref(0);
 const notesScrollEl = ref<HTMLElement | null>(null);
 const notesScrollWidth = ref(0);
@@ -90,7 +90,7 @@ function updateNotesScrollWidth() {
   notesScrollWidth.value = notesScrollEl.value?.clientWidth ?? 0;
 }
 
-function showNewCardPage(initialTitle = "", initialContent = "", initialKind: NoteKind = "词语") {
+function showNewCardPage(initialTitle = "", initialContent = "", initialKind: NoteKind = "word") {
   editingNote.value = null;
   newCardInitialTitle.value = initialTitle;
   newCardInitialContent.value = initialContent;
@@ -126,7 +126,7 @@ async function handleQuickCapture(payload: QuickCapturePayload) {
   const title = payload.title?.trim() ?? "";
 
   if (!title) {
-    showNewCardPage("", "", "词语");
+    showNewCardPage("", "", "word");
     return;
   }
 
@@ -141,12 +141,12 @@ async function handleQuickCapture(payload: QuickCapturePayload) {
     console.error("Failed to find captured note title", error);
   }
 
-  showNewCardPage(title, "", "词语");
+  showNewCardPage(title, "", "word");
 }
 
 function handleQuickCaptureContent(payload: QuickCaptureContentPayload) {
   const content = payload.content?.trim() ?? "";
-  showNewCardPage("", content, payload.kind ?? "句子");
+  showNewCardPage("", content, payload.kind ?? "sentence");
 }
 
 async function saveNewNote(note: NoteInput) {

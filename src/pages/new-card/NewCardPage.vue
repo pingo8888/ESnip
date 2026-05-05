@@ -25,16 +25,16 @@ const props = withDefaults(
     initialNote: null,
     initialTitle: "",
     initialContent: "",
-    initialKind: "词语",
+    initialKind: "word",
     mode: "create",
   },
 );
 
-const noteKinds: NoteKind[] = ["词语", "句子", "段落"];
+const noteKinds: NoteKind[] = ["word", "sentence", "paragraph"];
 const noteTones: NoteTone[] = ["sage", "ochre", "clay", "ink"];
 
 const titleInputRef = ref<HTMLInputElement | null>(null);
-const kind = ref<NoteKind>("词语");
+const kind = ref<NoteKind>("word");
 const tone = ref<NoteTone>("sage");
 const title = ref("");
 const excerpt = ref("");
