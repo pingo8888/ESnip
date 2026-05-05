@@ -18,7 +18,7 @@ const DEFAULT_HOTKEYS: HotkeySettings = {
 const DEFAULT_SETTINGS: AppSettings = {
   dataDir: "",
   hotkeys: { ...DEFAULT_HOTKEYS },
-  locale: "zh-CN",
+  locale: detectBrowserLocale(),
 };
 
 const settings = ref<AppSettings>({ ...DEFAULT_SETTINGS });
@@ -96,6 +96,15 @@ function normalizeSettings(value: AppSettings): AppSettings {
     hotkeys: normalizeHotkeys(value.hotkeys),
     locale: value.locale === "en-US" ? "en-US" : "zh-CN",
   };
+}
+
+function detectBrowserLocale(): Locale {
+  if (typeof navigator === "undefined") {
+    return "zh-CN";
+  }
+
+  const languages = [navigator.language, ...navigator.languages].filter(Boolean);
+  return languages.some((language) => language.toLowerCase().startsWith("zh")) ? "zh-CN" : "en-US";
 }
 
 function normalizeHotkeys(hotkeys: Partial<HotkeySettings> | undefined): HotkeySettings {

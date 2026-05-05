@@ -97,11 +97,14 @@ pub(crate) fn get_app_settings<R: Runtime>(app: &AppHandle<R>) -> Result<AppSett
     let settings_path = settings_file_path(app)?;
 
     if !settings_path.exists() {
-        return normalize_settings(app, AppSettings::default(), false);
+        return normalize_settings(app, settings_with_initial_locale(), false);
     }
 
     let contents = fs::read_to_string(settings_path).map_err(|error| error.to_string())?;
-    let settings = serde_json::from_str::<AppSettings>(&contents).unwrap_or_default();
+    let mut settings = serde_json::from_str::<AppSettings>(&contents).unwrap_or_default();
+    if !settings_json_has_supported_locale(&contents) {
+        settings.locale = detect_initial_locale();
+    }
 
     normalize_settings(app, settings, false)
 }
@@ -242,14 +245,94 @@ fn normalize_settings<R: Runtime>(
 }
 
 fn normalize_locale(locale: String) -> String {
-    match locale.as_str() {
-        "zh-CN" | "en-US" => locale,
-        _ => DEFAULT_LOCALE.to_string(),
+    if is_supported_locale(&locale) {
+        locale
+    } else {
+        DEFAULT_LOCALE.to_string()
     }
 }
 
 fn default_locale() -> String {
     DEFAULT_LOCALE.to_string()
+}
+
+fn settings_with_initial_locale() -> AppSettings {
+    AppSettings {
+        locale: detect_initial_locale(),
+        ..AppSettings::default()
+    }
+}
+
+fn settings_json_has_supported_locale(contents: &str) -> bool {
+    serde_json::from_str::<serde_json::Value>(contents)
+        .ok()
+        .and_then(|value| {
+            value
+                .get("locale")
+                .and_then(|locale| locale.as_str())
+                .map(is_supported_locale)
+        })
+        .unwrap_or(false)
+}
+
+fn is_supported_locale(locale: &str) -> bool {
+    matches!(locale, "zh-CN" | "en-US")
+}
+
+fn detect_initial_locale() -> String {
+    detect_system_locale().unwrap_or_else(default_locale)
+}
+
+#[cfg(windows)]
+fn detect_system_locale() -> Option<String> {
+    use windows_sys::Win32::Globalization::GetUserDefaultLocaleName;
+
+    let mut buffer = [0u16; 85];
+    let written = unsafe { GetUserDefaultLocaleName(buffer.as_mut_ptr(), buffer.len() as i32) };
+    if written > 0 {
+        let length = buffer
+            .iter()
+            .position(|code_unit| *code_unit == 0)
+            .unwrap_or(written as usize);
+        let locale = String::from_utf16_lossy(&buffer[..length]);
+        if let Some(locale) = map_system_locale(&locale) {
+            return Some(locale);
+        }
+    }
+
+    detect_env_locale()
+}
+
+#[cfg(not(windows))]
+fn detect_system_locale() -> Option<String> {
+    detect_env_locale()
+}
+
+fn detect_env_locale() -> Option<String> {
+    ["LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"]
+        .iter()
+        .filter_map(|name| std::env::var(name).ok())
+        .find_map(|value| map_system_locale(&value))
+}
+
+fn map_system_locale(value: &str) -> Option<String> {
+    let locale = value
+        .trim()
+        .split(['.', ':'])
+        .next()
+        .unwrap_or_default()
+        .replace('_', "-")
+        .to_ascii_lowercase();
+
+    if locale.is_empty() || matches!(locale.as_str(), "c" | "posix") {
+        return None;
+    }
+
+    if locale.starts_with("zh") {
+        Some("zh-CN".to_string())
+    } else {
+        Some("en-US".to_string())
+    }
 }
 
 fn default_title_hotkey() -> String {

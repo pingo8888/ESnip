@@ -358,8 +358,7 @@ fn search_notes_like(
     page_offset: i64,
 ) -> Result<NotesPage, String> {
     let like_pattern = build_like_pattern(query);
-    let tag_filter_sql =
-        build_tag_filter_sql("notes", included_tags.len(), excluded_tags.len(), 2);
+    let tag_filter_sql = build_tag_filter_sql("notes", included_tags.len(), excluded_tags.len(), 2);
     let tag_param_count = included_tags.len() + excluded_tags.len();
     let mut values = Vec::with_capacity(3 + tag_param_count);
     values.push(Value::Text(like_pattern));
@@ -401,8 +400,7 @@ fn search_notes_by_tags(
     page_size: i64,
     page_offset: i64,
 ) -> Result<NotesPage, String> {
-    let tag_filter_sql =
-        build_tag_filter_sql("notes", included_tags.len(), excluded_tags.len(), 1);
+    let tag_filter_sql = build_tag_filter_sql("notes", included_tags.len(), excluded_tags.len(), 1);
     let tag_param_count = included_tags.len() + excluded_tags.len();
     let mut values = included_tags
         .iter()
