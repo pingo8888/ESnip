@@ -1,4 +1,6 @@
-export type NoteKind = "word" | "sentence" | "paragraph";
+import type { NoteKind } from "../../notes/noteKinds";
+
+export type { NoteKind };
 
 export type NoteTone = "sage" | "ochre" | "clay" | "ink";
 

@@ -1,6 +1,7 @@
 import { computed } from "vue";
 import { updateAppChromeTitle } from "../settings/appSettingsRepository";
 import { initAppSettings, setLocale as saveLocale, useAppSettings } from "../settings/useAppSettings";
+import { findNoteKindDefinition } from "../notes/noteKinds";
 import { enUSMessages } from "./en-US";
 import type { Locale, TranslateParams } from "./types";
 import { supportedLocales } from "./types";
@@ -78,19 +79,8 @@ export function translateError(error: unknown): string {
 }
 
 export function translateNoteKind(kind: string) {
-  if (kind === "word" || kind === "词语") {
-    return t("kind.word");
-  }
-
-  if (kind === "sentence" || kind === "句子") {
-    return t("kind.sentence");
-  }
-
-  if (kind === "paragraph" || kind === "段落") {
-    return t("kind.paragraph");
-  }
-
-  return kind;
+  const definition = findNoteKindDefinition(kind);
+  return definition ? t(definition.labelKey) : kind;
 }
 
 export function formatRelativeTime(timestamp: number) {

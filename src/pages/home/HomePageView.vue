@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { ArrowBigUp, Plus, Search, Settings, X } from "lucide-vue-next";
 import { useI18n } from "../../i18n";
+import { noteKindDefinitions } from "../../notes/noteKinds";
 import NoteCard from "./NoteCard.vue";
 import NoteContextMenu from "./NoteContextMenu.vue";
 import type { Note } from "./noteTypes";
@@ -40,6 +41,7 @@ const sectionTitle = computed(() =>
     : t("home.cardsCount", { count: props.resultCount }),
 );
 const highlightTerms = computed(() => parseHighlightTerms(props.searchQuery));
+const noteKindSearchSuggestions = computed(() => noteKindDefinitions.map((definition) => t(definition.labelKey)));
 
 function openContextMenu(event: MouseEvent, note: Note) {
   const menuWidth = 198;
@@ -154,6 +156,7 @@ onUnmounted(() => {
         </span>
         <TagSuggestInput
           :model-value="searchQuery"
+          :priority-suggestions="noteKindSearchSuggestions"
           :tag-prefixes="['!#', '#']"
           type="search"
           :placeholder="t('home.searchPlaceholder')"

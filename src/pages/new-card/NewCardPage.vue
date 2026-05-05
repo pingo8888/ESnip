@@ -4,6 +4,7 @@ import { ArrowLeft, Settings } from "lucide-vue-next";
 import { useI18n } from "../../i18n";
 import { isHotkeyEvent } from "../../settings/hotkeys";
 import { useAppSettings } from "../../settings/useAppSettings";
+import { noteKindDefinitions } from "../../notes/noteKinds";
 import { computeColumnLayout } from "../home/cardColumns";
 import NoteCard from "../home/NoteCard.vue";
 import type { Note, NoteInput, NoteKind, NoteTone, NoteUpdateInput } from "../home/noteTypes";
@@ -30,7 +31,7 @@ const props = withDefaults(
   },
 );
 
-const noteKinds: NoteKind[] = ["word", "sentence", "paragraph"];
+const noteKinds = noteKindDefinitions.map((definition) => definition.value);
 const noteTones: NoteTone[] = ["sage", "ochre", "clay", "ink"];
 
 const titleInputRef = ref<HTMLInputElement | null>(null);

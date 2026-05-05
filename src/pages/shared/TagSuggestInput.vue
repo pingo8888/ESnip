@@ -7,11 +7,13 @@ const props = withDefaults(
   defineProps<{
     modelValue: string;
     placeholder?: string;
+    prioritySuggestions?: string[];
     tagPrefixes?: string[];
     type?: "search" | "text";
   }>(),
   {
     placeholder: "",
+    prioritySuggestions: () => [],
     tagPrefixes: () => ["#"],
     type: "text",
   },
@@ -121,7 +123,7 @@ async function loadSuggestions(prefix: string) {
       return;
     }
 
-    suggestions.value = filterExistingTags(tags);
+    suggestions.value = buildSuggestions(prefix, tags);
     highlightedIndex.value = Math.min(highlightedIndex.value, Math.max(suggestions.value.length - 1, 0));
   } catch (error) {
     console.error("Failed to load tag suggestions", error);
@@ -135,6 +137,23 @@ function filterExistingTags(tags: string[]) {
   const existingTags = parseExistingTags();
 
   return tags.filter((tag) => !existingTags.some((existingTag) => existingTag.toLowerCase() === tag.toLowerCase()));
+}
+
+function buildSuggestions(prefix: string, tags: string[]) {
+  const normalizedPrefix = prefix.toLowerCase();
+  const prioritySuggestions = props.prioritySuggestions.filter((suggestion) =>
+    suggestion.toLowerCase().startsWith(normalizedPrefix),
+  );
+  const mergedSuggestions = [...prioritySuggestions, ...tags];
+  const uniqueSuggestions: string[] = [];
+
+  for (const suggestion of mergedSuggestions) {
+    if (!uniqueSuggestions.some((item) => item.toLowerCase() === suggestion.toLowerCase())) {
+      uniqueSuggestions.push(suggestion);
+    }
+  }
+
+  return filterExistingTags(uniqueSuggestions);
 }
 
 function parseExistingTags() {
@@ -252,7 +271,7 @@ watch(isOpen, (value) => {
           role="option"
           @mousedown.prevent="selectTag(tag)"
         >
-          <span>#{{ tag }}</span>
+          <span>{{ activeToken?.trigger ?? "#" }}{{ tag }}</span>
         </button>
       </div>
 
