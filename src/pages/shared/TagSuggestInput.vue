@@ -237,11 +237,12 @@ watch(isOpen, (value) => {
     />
 
     <div v-if="isOpen" class="tag-suggestions" role="listbox">
-      <div ref="listEl" class="tag-suggestions-list">
+      <div ref="listEl" class="tag-suggestions-list" tabindex="-1">
         <button
           v-for="(tag, index) in suggestions"
           :key="tag"
           type="button"
+          tabindex="-1"
           :class="{ 'is-active': highlightedIndex === index }"
           role="option"
           @mousedown.prevent="selectTag(tag)"

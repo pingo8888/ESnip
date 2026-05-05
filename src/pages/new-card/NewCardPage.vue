@@ -153,12 +153,12 @@ onUnmounted(() => {
 <template>
   <main class="new-card-shell" @keydown.capture="handlePageKeydown">
     <div class="new-card-toolbar" :aria-label="t('newCard.actions')">
-      <button type="button" class="back-button" @click="$emit('cancel')">
+      <button type="button" class="back-button" tabindex="-1" @click="$emit('cancel')">
         <ArrowLeft aria-hidden="true" />
         <span>{{ t("common.back") }}</span>
       </button>
 
-      <button type="button" class="icon-button" :aria-label="t('common.settings')" :title="t('common.settings')" @click="$emit('openSettings')">
+      <button type="button" class="icon-button" tabindex="-1" :aria-label="t('common.settings')" :title="t('common.settings')" @click="$emit('openSettings')">
         <Settings aria-hidden="true" />
       </button>
     </div>

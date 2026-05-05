@@ -142,7 +142,7 @@
 .version-mark {
   margin-top: 34px;
   border-top: 1px solid var(--line);
-  padding-top: 16px;
+  padding: 16px 12px 0;
   color: #a1968a;
   font-family: "Gill Sans", "Trebuchet MS", sans-serif;
   font-size: 0.82rem;

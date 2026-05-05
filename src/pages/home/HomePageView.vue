@@ -103,6 +103,7 @@ onUnmounted(() => {
         <button
           v-if="updateAvailable"
           type="button"
+          tabindex="-1"
           :aria-label="t('home.updateAvailable')"
           :disabled="updateBusy"
           :title="t('home.updateAvailable')"
@@ -112,10 +113,10 @@ onUnmounted(() => {
         </button>
       </div>
       <div class="app-actions">
-        <button type="button" :aria-label="t('home.addNote')" :title="t('home.addNote')" @click="$emit('createNote')">
+        <button type="button" tabindex="-1" :aria-label="t('home.addNote')" :title="t('home.addNote')" @click="$emit('createNote')">
           <Plus aria-hidden="true" />
         </button>
-        <button type="button" :aria-label="t('common.settings')" :title="t('common.settings')" @click="$emit('openSettings')">
+        <button type="button" tabindex="-1" :aria-label="t('common.settings')" :title="t('common.settings')" @click="$emit('openSettings')">
           <Settings aria-hidden="true" />
         </button>
       </div>
@@ -135,6 +136,7 @@ onUnmounted(() => {
         <button
           v-if="searchQuery"
           type="button"
+          tabindex="-1"
           class="search-clear"
           :aria-label="t('home.clearSearch')"
           :title="t('home.clearSearch')"
@@ -152,6 +154,7 @@ onUnmounted(() => {
       <div
         :ref="(el) => $emit('notesScrollReady', el as HTMLElement | null)"
         class="notes-scroll"
+        tabindex="-1"
         @scroll="closeContextMenu"
       >
         <div class="notes-columns">
