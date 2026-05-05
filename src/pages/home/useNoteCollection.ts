@@ -11,6 +11,7 @@ import {
 export function useNoteCollection() {
   const notes = ref<Note[]>([]);
   const nextCursor = ref<NotesCursor | null>(null);
+  const totalCount = ref(0);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
   const searchQuery = ref("");
@@ -31,6 +32,7 @@ export function useNoteCollection() {
 
       notes.value = page.notes;
       nextCursor.value = page.nextCursor;
+      totalCount.value = page.totalCount;
     } catch (caught) {
       error.value = caught instanceof Error ? caught.message : String(caught);
     } finally {
@@ -39,7 +41,16 @@ export function useNoteCollection() {
   }
 
   async function loadNextNotesPage() {
-    if (searchQuery.value.trim() || !nextCursor.value || isLoading.value) {
+    if (isLoading.value) {
+      return;
+    }
+
+    const trimmedQuery = searchQuery.value.trim();
+    if (trimmedQuery) {
+      if (notes.value.length >= totalCount.value) {
+        return;
+      }
+    } else if (!nextCursor.value) {
       return;
     }
 
@@ -47,10 +58,13 @@ export function useNoteCollection() {
     error.value = null;
 
     try {
-      const page = await listNotesPage(nextCursor.value);
+      const page = trimmedQuery
+        ? await searchNotes(trimmedQuery, 80, notes.value.length)
+        : await listNotesPage(nextCursor.value);
 
       notes.value = [...notes.value, ...page.notes];
-      nextCursor.value = page.nextCursor;
+      nextCursor.value = trimmedQuery ? null : page.nextCursor;
+      totalCount.value = page.totalCount;
     } catch (caught) {
       error.value = caught instanceof Error ? caught.message : String(caught);
     } finally {
@@ -61,12 +75,24 @@ export function useNoteCollection() {
   async function addNote(input: NoteInput) {
     const note = await createPersistedNote(input);
 
+    if (searchQuery.value.trim()) {
+      await applySearchQuery(searchQuery.value);
+      return note;
+    }
+
     notes.value = [note, ...notes.value];
+    totalCount.value += 1;
     return note;
   }
 
   async function updateNote(input: NoteUpdateInput) {
     const note = await updatePersistedNote(input);
+
+    if (searchQuery.value.trim()) {
+      await applySearchQuery(searchQuery.value);
+      return note;
+    }
+
     const filtered = notes.value.filter((item) => item.id !== note.id);
 
     notes.value = [note, ...filtered];
@@ -75,7 +101,14 @@ export function useNoteCollection() {
 
   async function deleteNote(id: string) {
     await deletePersistedNote(id);
+
+    if (searchQuery.value.trim()) {
+      await applySearchQuery(searchQuery.value);
+      return;
+    }
+
     notes.value = notes.value.filter((note) => note.id !== id);
+    totalCount.value = Math.max(0, totalCount.value - 1);
   }
 
   function setSearchQuery(query: string) {
@@ -106,6 +139,7 @@ export function useNoteCollection() {
 
       notes.value = page.notes;
       nextCursor.value = trimmedQuery ? null : page.nextCursor;
+      totalCount.value = page.totalCount;
     } catch (caught) {
       if (requestId !== requestSerial) {
         return;
@@ -130,6 +164,7 @@ export function useNoteCollection() {
     notes,
     searchQuery,
     setSearchQuery,
+    totalCount,
     updateNote,
   };
 }

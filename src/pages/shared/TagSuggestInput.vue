@@ -7,10 +7,12 @@ const props = withDefaults(
   defineProps<{
     modelValue: string;
     placeholder?: string;
+    tagPrefixes?: string[];
     type?: "search" | "text";
   }>(),
   {
     placeholder: "",
+    tagPrefixes: () => ["#"],
     type: "text",
   },
 );
@@ -24,7 +26,7 @@ const inputEl = ref<HTMLInputElement | null>(null);
 const listEl = ref<HTMLElement | null>(null);
 const suggestions = ref<string[]>([]);
 const highlightedIndex = ref(0);
-const activeToken = ref<{ start: number; end: number; prefix: string } | null>(null);
+const activeToken = ref<{ start: number; end: number; query: string; trigger: string } | null>(null);
 const { t } = useI18n();
 let requestSerial = 0;
 let suggestionTimer: ReturnType<typeof setTimeout> | undefined;
@@ -105,7 +107,7 @@ function scheduleSuggestions(value: string, cursor: number) {
   }
 
   suggestionTimer = setTimeout(() => {
-    void loadSuggestions(token.prefix);
+    void loadSuggestions(token.query);
   }, 120);
 }
 
@@ -162,8 +164,8 @@ function selectTag(tag: string) {
   const value = props.modelValue;
   const before = value.slice(0, activeToken.value.start);
   const after = value.slice(activeToken.value.end).replace(/^\s*/, "");
-  const nextValue = `${before}#${tag} ${after}`;
-  const nextCursor = before.length + tag.length + 2;
+  const nextValue = `${before}${activeToken.value.trigger}${tag} ${after}`;
+  const nextCursor = before.length + activeToken.value.trigger.length + tag.length + 1;
 
   emit("update:modelValue", nextValue);
   closeSuggestions();
@@ -195,7 +197,9 @@ function findActiveTagToken(value: string, cursor: number) {
   const tokenStart = Math.max(beforeCursor.lastIndexOf(" "), beforeCursor.lastIndexOf(","), beforeCursor.lastIndexOf("，")) + 1;
   const token = beforeCursor.slice(tokenStart);
 
-  if (!token.startsWith("#")) {
+  const trigger = [...props.tagPrefixes].sort((a, b) => b.length - a.length).find((prefix) => token.startsWith(prefix));
+
+  if (!trigger) {
     return null;
   }
 
@@ -204,8 +208,9 @@ function findActiveTagToken(value: string, cursor: number) {
 
   return {
     end: tokenEnd,
-    prefix: token.slice(1),
+    query: token.slice(trigger.length),
     start: tokenStart,
+    trigger,
   };
 }
 

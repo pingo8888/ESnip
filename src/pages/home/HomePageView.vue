@@ -19,6 +19,7 @@ const emit = defineEmits<{
   createNote: [];
   deleteNote: [note: Note];
   editNote: [note: Note];
+  loadMoreNotes: [];
   notesScrollReady: [el: HTMLElement | null];
   openSettings: [];
   startUpdate: [];
@@ -85,6 +86,16 @@ function clearSearch() {
   emit("updateSearchQuery", "");
 }
 
+function handleNotesScroll(event: Event) {
+  closeContextMenu();
+
+  const el = event.currentTarget as HTMLElement;
+  const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+  if (distanceToBottom <= 320) {
+    emit("loadMoreNotes");
+  }
+}
+
 onMounted(() => {
   window.addEventListener("pointerdown", handleGlobalPointerDown);
   window.addEventListener("keydown", handleGlobalKeyDown);
@@ -129,6 +140,7 @@ onUnmounted(() => {
         </span>
         <TagSuggestInput
           :model-value="searchQuery"
+          :tag-prefixes="['!#', '#']"
           type="search"
           :placeholder="t('home.searchPlaceholder')"
           @update:model-value="emit('updateSearchQuery', $event)"
@@ -155,7 +167,7 @@ onUnmounted(() => {
         :ref="(el) => $emit('notesScrollReady', el as HTMLElement | null)"
         class="notes-scroll"
         tabindex="-1"
-        @scroll="closeContextMenu"
+        @scroll="handleNotesScroll"
       >
         <div class="notes-columns">
           <div v-for="(column, columnIndex) in masonryColumns" :key="columnIndex" class="notes-column">

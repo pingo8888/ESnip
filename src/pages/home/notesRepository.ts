@@ -15,11 +15,13 @@ type BackendNote = {
 type BackendNotesPage = {
   notes: BackendNote[];
   nextCursor: NotesCursor | null;
+  totalCount: number;
 };
 
 export type NotesPage = {
   notes: Note[];
   nextCursor: NotesCursor | null;
+  totalCount: number;
 };
 
 export async function listNotesPage(cursor: NotesCursor | null, limit = 80): Promise<NotesPage> {
@@ -32,18 +34,21 @@ export async function listNotesPage(cursor: NotesCursor | null, limit = 80): Pro
   return {
     nextCursor: page.nextCursor,
     notes: page.notes.map(mapBackendNote),
+    totalCount: page.totalCount,
   };
 }
 
-export async function searchNotes(query: string, limit = 80): Promise<NotesPage> {
+export async function searchNotes(query: string, limit = 80, offset = 0): Promise<NotesPage> {
   const page = await invoke<BackendNotesPage>("search_notes", {
     limit,
+    offset,
     query,
   });
 
   return {
     nextCursor: page.nextCursor,
     notes: page.notes.map(mapBackendNote),
+    totalCount: page.totalCount,
   };
 }
 
@@ -53,8 +58,8 @@ export async function findNoteByTitle(title: string): Promise<Note | null> {
   return note ? mapBackendNote(note) : null;
 }
 
-export async function listTags(prefix: string): Promise<string[]> {
-  return invoke<string[]>("list_tags", { limit: null, prefix });
+export async function listTags(prefix: string, limit = 50): Promise<string[]> {
+  return invoke<string[]>("list_tags", { limit, prefix });
 }
 
 export async function createNote(input: NoteInput): Promise<Note> {

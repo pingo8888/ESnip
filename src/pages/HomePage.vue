@@ -27,7 +27,7 @@ type QuickCaptureContentPayload = {
 
 const activePage = ref<ActivePage>("home");
 const settingsReturnPage = ref<WorkPage | null>(null);
-const { notes, addNote, deleteNote, loadInitialNotes, searchQuery, setSearchQuery, updateNote } = useNoteCollection();
+const { notes, addNote, deleteNote, loadInitialNotes, loadNextNotesPage, searchQuery, setSearchQuery, totalCount, updateNote } = useNoteCollection();
 const { checkAndInstallUpdate, checkForUpdate, hasUpdate, isBusy: isUpdateBusy } = useAppUpdater();
 const editingNote = ref<Note | null>(null);
 const deletingNote = ref<Note | null>(null);
@@ -252,13 +252,14 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
     <HomePageView
       v-show="activePage === 'home'"
       :masonry-columns="masonryColumns"
-      :result-count="notes.length"
+      :result-count="totalCount"
       :search-query="searchQuery"
       :update-available="hasUpdate"
       :update-busy="isUpdateBusy"
       @create-note="showNewCardPage"
       @delete-note="requestDeleteNote"
       @edit-note="showEditCardPage"
+      @load-more-notes="loadNextNotesPage"
       @notes-scroll-ready="setNotesScrollElement"
       @open-settings="showSettingsPage"
       @start-update="checkAndInstallUpdate"

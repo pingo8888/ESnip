@@ -34,6 +34,7 @@ pub(crate) struct NoteDto {
 pub(crate) struct NotesPage {
     notes: Vec<NoteDto>,
     next_cursor: Option<NotesCursor>,
+    total_count: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -93,6 +94,10 @@ pub(crate) fn list_notes_page(
 ) -> Result<NotesPage, String> {
     let page_size = limit.unwrap_or(80).clamp(1, 100);
 
+    let total_count = conn
+        .query_row("SELECT COUNT(*) FROM notes", [], |row| row.get::<_, i64>(0))
+        .map_err(|error| error.to_string())?;
+
     let notes = if let (Some(updated_at), Some(id)) = (cursor_updated_at, cursor_id) {
         let mut stmt = conn
             .prepare(
@@ -133,37 +138,68 @@ pub(crate) fn list_notes_page(
         id: note.id.clone(),
     });
 
-    Ok(NotesPage { notes, next_cursor })
+    Ok(NotesPage {
+        notes,
+        next_cursor,
+        total_count,
+    })
 }
 
 pub(crate) fn search_notes(
     conn: &Connection,
     query: String,
     limit: Option<i64>,
+    offset: Option<i64>,
 ) -> Result<NotesPage, String> {
     let page_size = limit.unwrap_or(80).clamp(1, 100);
+    let page_offset = offset.unwrap_or(0).max(0);
     let parsed_query = parse_search_query(&query);
 
-    if parsed_query.text.is_empty() && !parsed_query.tags.is_empty() {
-        return search_notes_by_tags(conn, &parsed_query.tags, page_size);
+    if parsed_query.text.is_empty()
+        && (!parsed_query.included_tags.is_empty() || !parsed_query.excluded_tags.is_empty())
+    {
+        return search_notes_by_tags(
+            conn,
+            &parsed_query.included_tags,
+            &parsed_query.excluded_tags,
+            page_size,
+            page_offset,
+        );
     }
 
     let Some(fts_query) = build_fts_query(&parsed_query.text) else {
         return Ok(NotesPage {
             notes: Vec::new(),
             next_cursor: None,
+            total_count: 0,
         });
     };
 
     if parsed_query.text.trim().chars().count() < 3 {
-        return search_notes_like(conn, &parsed_query.text, &parsed_query.tags, page_size);
+        return search_notes_like(
+            conn,
+            &parsed_query.text,
+            &parsed_query.included_tags,
+            &parsed_query.excluded_tags,
+            page_size,
+            page_offset,
+        );
     }
 
-    let tag_filter_sql = build_tag_filter_sql("notes", parsed_query.tags.len(), 2);
-    let mut values = Vec::with_capacity(2 + parsed_query.tags.len());
+    let tag_filter_sql = build_tag_filter_sql(
+        "notes",
+        parsed_query.included_tags.len(),
+        parsed_query.excluded_tags.len(),
+        2,
+    );
+    let tag_param_count = parsed_query.included_tags.len() + parsed_query.excluded_tags.len();
+    let mut values = Vec::with_capacity(3 + tag_param_count);
     values.push(Value::Text(fts_query));
-    values.extend(parsed_query.tags.iter().cloned().map(Value::Text));
+    values.extend(parsed_query.included_tags.iter().cloned().map(Value::Text));
+    values.extend(parsed_query.excluded_tags.iter().cloned().map(Value::Text));
+    let total_count = count_notes_fts(conn, &tag_filter_sql, &values)?;
     values.push(Value::Integer(page_size));
+    values.push(Value::Integer(page_offset));
 
     let mut stmt = conn
         .prepare(
@@ -174,8 +210,9 @@ pub(crate) fn search_notes(
              WHERE notes_fts MATCH ?1
                {tag_filter_sql}
              ORDER BY bm25(notes_fts), notes.updated_at DESC, notes.id DESC
-             LIMIT ?{}",
-                parsed_query.tags.len() + 2
+             LIMIT ?{} OFFSET ?{}",
+                tag_param_count + 2,
+                tag_param_count + 3
             ),
         )
         .map_err(|error| error.to_string())?;
@@ -188,6 +225,7 @@ pub(crate) fn search_notes(
     Ok(NotesPage {
         notes,
         next_cursor: None,
+        total_count,
     })
 }
 
@@ -312,15 +350,22 @@ pub(crate) fn delete_note(conn: &Connection, id: String) -> Result<(), String> {
 fn search_notes_like(
     conn: &Connection,
     query: &str,
-    tags: &[String],
+    included_tags: &[String],
+    excluded_tags: &[String],
     page_size: i64,
+    page_offset: i64,
 ) -> Result<NotesPage, String> {
     let like_pattern = build_like_pattern(query);
-    let tag_filter_sql = build_tag_filter_sql("notes", tags.len(), 2);
-    let mut values = Vec::with_capacity(2 + tags.len());
+    let tag_filter_sql =
+        build_tag_filter_sql("notes", included_tags.len(), excluded_tags.len(), 2);
+    let tag_param_count = included_tags.len() + excluded_tags.len();
+    let mut values = Vec::with_capacity(3 + tag_param_count);
     values.push(Value::Text(like_pattern));
-    values.extend(tags.iter().cloned().map(Value::Text));
+    values.extend(included_tags.iter().cloned().map(Value::Text));
+    values.extend(excluded_tags.iter().cloned().map(Value::Text));
+    let total_count = count_notes_like(conn, &tag_filter_sql, &values)?;
     values.push(Value::Integer(page_size));
+    values.push(Value::Integer(page_offset));
     let mut stmt = conn
         .prepare(&format!(
             "SELECT id, title, content, kind, tone, tags_json, created_at, updated_at
@@ -329,8 +374,9 @@ fn search_notes_like(
                 OR COALESCE(content, '') LIKE ?1 ESCAPE '\\')
                {tag_filter_sql}
              ORDER BY updated_at DESC, id DESC
-             LIMIT ?{}",
-            tags.len() + 2
+             LIMIT ?{} OFFSET ?{}",
+            tag_param_count + 2,
+            tag_param_count + 3
         ))
         .map_err(|error| error.to_string())?;
 
@@ -342,17 +388,29 @@ fn search_notes_like(
     Ok(NotesPage {
         notes,
         next_cursor: None,
+        total_count,
     })
 }
 
 fn search_notes_by_tags(
     conn: &Connection,
-    tags: &[String],
+    included_tags: &[String],
+    excluded_tags: &[String],
     page_size: i64,
+    page_offset: i64,
 ) -> Result<NotesPage, String> {
-    let tag_filter_sql = build_tag_filter_sql("notes", tags.len(), 1);
-    let mut values = tags.iter().cloned().map(Value::Text).collect::<Vec<_>>();
+    let tag_filter_sql =
+        build_tag_filter_sql("notes", included_tags.len(), excluded_tags.len(), 1);
+    let tag_param_count = included_tags.len() + excluded_tags.len();
+    let mut values = included_tags
+        .iter()
+        .chain(excluded_tags.iter())
+        .cloned()
+        .map(Value::Text)
+        .collect::<Vec<_>>();
+    let total_count = count_notes_by_tags(conn, &tag_filter_sql, &values)?;
     values.push(Value::Integer(page_size));
+    values.push(Value::Integer(page_offset));
 
     let mut stmt = conn
         .prepare(&format!(
@@ -361,8 +419,9 @@ fn search_notes_by_tags(
                  WHERE 1 = 1
                    {tag_filter_sql}
                  ORDER BY updated_at DESC, id DESC
-                 LIMIT ?{}",
-            tags.len() + 1
+                 LIMIT ?{} OFFSET ?{}",
+            tag_param_count + 1,
+            tag_param_count + 2
         ))
         .map_err(|error| error.to_string())?;
 
@@ -374,39 +433,113 @@ fn search_notes_by_tags(
     Ok(NotesPage {
         notes,
         next_cursor: None,
+        total_count,
     })
 }
 
-fn build_tag_filter_sql(table_alias: &str, tag_count: usize, first_param_index: usize) -> String {
-    (0..tag_count)
+fn count_notes_fts(
+    conn: &Connection,
+    tag_filter_sql: &str,
+    values: &[Value],
+) -> Result<i64, String> {
+    conn.query_row(
+        &format!(
+            "SELECT COUNT(*)
+             FROM notes_fts
+             JOIN notes ON notes_fts.rowid = notes.rowid
+             WHERE notes_fts MATCH ?1
+               {tag_filter_sql}"
+        ),
+        params_from_iter(values.iter()),
+        |row| row.get::<_, i64>(0),
+    )
+    .map_err(|error| error.to_string())
+}
+
+fn count_notes_like(
+    conn: &Connection,
+    tag_filter_sql: &str,
+    values: &[Value],
+) -> Result<i64, String> {
+    conn.query_row(
+        &format!(
+            "SELECT COUNT(*)
+             FROM notes
+             WHERE (COALESCE(title, '') LIKE ?1 ESCAPE '\\'
+                OR COALESCE(content, '') LIKE ?1 ESCAPE '\\')
+               {tag_filter_sql}"
+        ),
+        params_from_iter(values.iter()),
+        |row| row.get::<_, i64>(0),
+    )
+    .map_err(|error| error.to_string())
+}
+
+fn count_notes_by_tags(
+    conn: &Connection,
+    tag_filter_sql: &str,
+    values: &[Value],
+) -> Result<i64, String> {
+    conn.query_row(
+        &format!(
+            "SELECT COUNT(*)
+             FROM notes
+             WHERE 1 = 1
+               {tag_filter_sql}"
+        ),
+        params_from_iter(values.iter()),
+        |row| row.get::<_, i64>(0),
+    )
+    .map_err(|error| error.to_string())
+}
+
+fn build_tag_filter_sql(
+    table_alias: &str,
+    included_tag_count: usize,
+    excluded_tag_count: usize,
+    first_param_index: usize,
+) -> String {
+    let included_sql = (0..included_tag_count)
         .map(|index| {
             format!(
                 " AND EXISTS (SELECT 1 FROM json_each({table_alias}.tags_json) WHERE json_each.value = ?{} COLLATE NOCASE)",
                 first_param_index + index
             )
         })
-        .collect::<String>()
+        .collect::<String>();
+    let excluded_sql = (0..excluded_tag_count)
+        .map(|index| {
+            format!(
+                " AND NOT EXISTS (SELECT 1 FROM json_each({table_alias}.tags_json) WHERE json_each.value = ?{} COLLATE NOCASE)",
+                first_param_index + included_tag_count + index
+            )
+        })
+        .collect::<String>();
+
+    format!("{included_sql}{excluded_sql}")
 }
 
 struct ParsedSearchQuery {
     text: String,
-    tags: Vec<String>,
+    included_tags: Vec<String>,
+    excluded_tags: Vec<String>,
 }
 
 fn parse_search_query(query: &str) -> ParsedSearchQuery {
     let mut text_terms = Vec::new();
-    let mut tags = Vec::new();
+    let mut included_tags = Vec::new();
+    let mut excluded_tags = Vec::new();
 
     for term in query.split_whitespace() {
-        if let Some(tag) = term
-            .strip_prefix('#')
-            .and_then(|value| clean_search_tag(value))
-        {
-            if !tags
+        if let Some(tag) = term.strip_prefix("!#").and_then(clean_search_tag) {
+            remove_tag(&mut included_tags, &tag);
+            push_unique_tag(&mut excluded_tags, tag);
+        } else if let Some(tag) = term.strip_prefix('#').and_then(clean_search_tag) {
+            if !excluded_tags
                 .iter()
                 .any(|item: &String| item.eq_ignore_ascii_case(&tag))
             {
-                tags.push(tag);
+                push_unique_tag(&mut included_tags, tag);
             }
         } else {
             text_terms.push(term);
@@ -415,8 +548,19 @@ fn parse_search_query(query: &str) -> ParsedSearchQuery {
 
     ParsedSearchQuery {
         text: text_terms.join(" "),
-        tags,
+        included_tags,
+        excluded_tags,
     }
+}
+
+fn push_unique_tag(tags: &mut Vec<String>, tag: String) {
+    if !tags.iter().any(|item| item.eq_ignore_ascii_case(&tag)) {
+        tags.push(tag);
+    }
+}
+
+fn remove_tag(tags: &mut Vec<String>, tag: &str) {
+    tags.retain(|item| !item.eq_ignore_ascii_case(tag));
 }
 
 fn clean_search_tag(value: &str) -> Option<String> {

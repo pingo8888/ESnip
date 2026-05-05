@@ -22,10 +22,11 @@ pub(crate) fn search_notes(
     state: State<'_, DbState>,
     query: String,
     limit: Option<i64>,
+    offset: Option<i64>,
 ) -> Result<NotesPage, String> {
     let conn = state.conn.lock().map_err(|error| error.to_string())?;
 
-    crate::store::notes::search_notes(&conn, query, limit)
+    crate::store::notes::search_notes(&conn, query, limit, offset)
 }
 
 #[tauri::command]
