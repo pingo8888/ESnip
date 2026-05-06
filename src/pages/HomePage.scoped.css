@@ -42,7 +42,7 @@
   grid-column: 2;
   justify-self: end;
   height: 100%;
-  grid-template-columns: repeat(3, 40px);
+  grid-template-columns: repeat(4, 40px);
   align-items: stretch;
 }
 
@@ -91,6 +91,6 @@
   }
 
   .window-controls {
-    grid-template-columns: repeat(3, 34px);
+    grid-template-columns: repeat(4, 34px);
   }
 }

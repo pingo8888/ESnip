@@ -37,6 +37,7 @@ const newCardInitialKind = ref<NoteKind>("word");
 const newCardDraftKey = ref(0);
 const notesScrollEl = ref<HTMLElement | null>(null);
 const notesScrollWidth = ref(0);
+const alwaysOnTop = ref(false);
 let resizeObserver: ResizeObserver | undefined;
 let unlistenQuickCapture: UnlistenFn | undefined;
 let unlistenQuickCaptureContent: UnlistenFn | undefined;
@@ -200,6 +201,7 @@ async function handleTagsChanged() {
 onMounted(() => {
   void initI18n();
   void loadInitialNotes();
+  void loadAlwaysOnTopState();
   void checkForUpdate({ silent: true });
   void listen<QuickCapturePayload>("quick-capture", (event) => {
     void handleQuickCapture(event.payload);
@@ -221,6 +223,25 @@ onUnmounted(() => {
 
 async function minimizeWindow() {
   await getCurrentWindow().minimize();
+}
+
+async function loadAlwaysOnTopState() {
+  try {
+    alwaysOnTop.value = await getCurrentWindow().isAlwaysOnTop();
+  } catch (error) {
+    console.error("Failed to load always-on-top state", error);
+  }
+}
+
+async function toggleAlwaysOnTop() {
+  const nextAlwaysOnTop = !alwaysOnTop.value;
+
+  try {
+    await getCurrentWindow().setAlwaysOnTop(nextAlwaysOnTop);
+    alwaysOnTop.value = nextAlwaysOnTop;
+  } catch (error) {
+    console.error("Failed to toggle always-on-top state", error);
+  }
 }
 
 async function toggleMaximizeWindow() {
@@ -249,9 +270,11 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
 
 <template>
   <HomeShellView
+    :always-on-top="alwaysOnTop"
     @close-window="closeWindow"
     @minimize-window="minimizeWindow"
     @titlebar-mouse-down="handleTitlebarMouseDown"
+    @toggle-always-on-top="toggleAlwaysOnTop"
     @toggle-maximize-window="toggleMaximizeWindow"
   >
     <HomePageView

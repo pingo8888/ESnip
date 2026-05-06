@@ -97,6 +97,8 @@ export const enUSMessages = {
   "window.controls": "Window controls",
   "window.maximize": "Maximize",
   "window.minimize": "Minimize",
+  "window.pin": "Pin window",
+  "window.unpin": "Unpin window",
   "deleteDialog.copy": "This card will be removed. This can't be undone.",
   "deleteDialog.title": "Delete this card?",
   "errors.duplicateHotkeys": "Hotkeys cannot be duplicated.",

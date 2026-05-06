@@ -95,6 +95,8 @@ export const zhCNMessages = {
   "window.controls": "窗口控制",
   "window.maximize": "最大化",
   "window.minimize": "最小化",
+  "window.pin": "置顶窗口",
+  "window.unpin": "取消置顶",
   "deleteDialog.copy": "确定移除卡片？此操作无法撤销。",
   "deleteDialog.title": "删除这张卡片？",
   "errors.duplicateHotkeys": "快捷键不能重复。",
