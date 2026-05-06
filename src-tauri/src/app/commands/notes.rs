@@ -2,7 +2,9 @@ use tauri::State;
 
 use crate::{
     app::state::DbState,
-    store::notes::{NoteDto, NotesPage, SaveNoteInput, UpdateNoteInput},
+    store::notes::{
+        NoteDto, NoteKindCountDto, NotesPage, SaveNoteInput, TagSuggestionDto, UpdateNoteInput,
+    },
 };
 
 #[tauri::command]
@@ -44,10 +46,19 @@ pub(crate) fn list_tags(
     state: State<'_, DbState>,
     prefix: String,
     limit: Option<i64>,
-) -> Result<Vec<String>, String> {
+) -> Result<Vec<TagSuggestionDto>, String> {
     let conn = state.conn.lock().map_err(|error| error.to_string())?;
 
     crate::store::notes::list_tags(&conn, prefix, limit)
+}
+
+#[tauri::command]
+pub(crate) fn list_note_kind_counts(
+    state: State<'_, DbState>,
+) -> Result<Vec<NoteKindCountDto>, String> {
+    let conn = state.conn.lock().map_err(|error| error.to_string())?;
+
+    crate::store::notes::list_note_kind_counts(&conn)
 }
 
 #[tauri::command]

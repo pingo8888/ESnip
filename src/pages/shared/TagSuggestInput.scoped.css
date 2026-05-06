@@ -32,6 +32,8 @@
   width: 100%;
   height: 34px;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   border: 0;
   padding: 0 10px;
   color: #3d372f;
@@ -42,10 +44,28 @@
   text-align: left;
 }
 
+.suggestion-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestion-count {
+  flex: 0 0 auto;
+  color: #9a9085;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .tag-suggestions button.is-active,
 .tag-suggestions button:hover {
   color: #fffaf2;
   background: #75806f;
+}
+
+.tag-suggestions button.is-active .suggestion-count,
+.tag-suggestions button:hover .suggestion-count {
+  color: rgba(255, 250, 242, 0.78);
 }
 
 .tag-suggestions-help {

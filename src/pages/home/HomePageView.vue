@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { ArrowBigUp, Plus, Search, Settings, X } from "lucide-vue-next";
 import { useI18n } from "../../i18n";
 import { noteKindDefinitions } from "../../notes/noteKinds";
@@ -7,6 +7,7 @@ import NoteCard from "./NoteCard.vue";
 import NoteContextMenu from "./NoteContextMenu.vue";
 import type { Note } from "./noteTypes";
 import TagSuggestInput from "../shared/TagSuggestInput.vue";
+import { listNoteKindCounts, type SuggestionItem } from "./notesRepository";
 import { parseHighlightTerms } from "./searchHighlight";
 
 const props = defineProps<{
@@ -35,13 +36,19 @@ const contextMenu = ref<{
   y: number;
 } | null>(null);
 const hasRequestedNearBottomLoad = ref(false);
+const noteKindCounts = ref<Record<string, number>>({});
 const sectionTitle = computed(() =>
   props.searchQuery.trim()
     ? t("home.searchResults", { count: props.resultCount })
     : t("home.cardsCount", { count: props.resultCount }),
 );
 const highlightTerms = computed(() => parseHighlightTerms(props.searchQuery));
-const noteKindSearchSuggestions = computed(() => noteKindDefinitions.map((definition) => t(definition.labelKey)));
+const noteKindSearchSuggestions = computed<SuggestionItem[]>(() =>
+  noteKindDefinitions.map((definition) => ({
+    count: noteKindCounts.value[definition.value] ?? 0,
+    label: t(definition.labelKey),
+  })),
+);
 const searchStaticSuggestions = computed(() => ({
   "!@": noteKindSearchSuggestions.value,
   "@": noteKindSearchSuggestions.value,
@@ -95,6 +102,15 @@ function clearSearch() {
   emit("updateSearchQuery", "");
 }
 
+async function refreshNoteKindCounts() {
+  try {
+    const counts = await listNoteKindCounts();
+    noteKindCounts.value = Object.fromEntries(counts.map((item) => [item.value, item.count]));
+  } catch (error) {
+    console.error("Failed to load note kind counts", error);
+  }
+}
+
 function handleNotesScroll(event: Event) {
   closeContextMenu();
 
@@ -119,12 +135,20 @@ function handleNotesScroll(event: Event) {
 onMounted(() => {
   window.addEventListener("pointerdown", handleGlobalPointerDown);
   window.addEventListener("keydown", handleGlobalKeyDown);
+  void refreshNoteKindCounts();
 });
 
 onUnmounted(() => {
   window.removeEventListener("pointerdown", handleGlobalPointerDown);
   window.removeEventListener("keydown", handleGlobalKeyDown);
 });
+
+watch(
+  () => props.resultCount,
+  () => {
+    void refreshNoteKindCounts();
+  },
+);
 </script>
 
 <template>

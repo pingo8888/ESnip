@@ -214,7 +214,7 @@ fn build_tag_filter_sql(
     let included_sql = (0..included_tag_count)
         .map(|index| {
             format!(
-                " AND EXISTS (SELECT 1 FROM json_each({table_alias}.tags_json) WHERE json_each.value = ?{} COLLATE NOCASE)",
+                " AND EXISTS (SELECT 1 FROM note_tags WHERE note_tags.note_id = {table_alias}.id AND note_tags.tag = ?{} COLLATE NOCASE)",
                 first_param_index + index
             )
         })
@@ -222,7 +222,7 @@ fn build_tag_filter_sql(
     let excluded_sql = (0..excluded_tag_count)
         .map(|index| {
             format!(
-                " AND NOT EXISTS (SELECT 1 FROM json_each({table_alias}.tags_json) WHERE json_each.value = ?{} COLLATE NOCASE)",
+                " AND NOT EXISTS (SELECT 1 FROM note_tags WHERE note_tags.note_id = {table_alias}.id AND note_tags.tag = ?{} COLLATE NOCASE)",
                 first_param_index + included_tag_count + index
             )
         })

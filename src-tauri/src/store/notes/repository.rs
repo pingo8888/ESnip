@@ -7,6 +7,7 @@ use crate::{
     core::text::clean_optional,
     store::notes::{
         kinds::normalize_note_kind,
+        tag_index::sync_note_tags,
         types::{NoteDto, NotesCursor, NotesPage, SaveNoteInput, UpdateNoteInput},
     },
 };
@@ -98,13 +99,18 @@ pub(crate) fn create_note(conn: &Connection, input: SaveNoteInput) -> Result<Not
     let excerpt = clean_optional(input.excerpt);
     let kind = normalize_note_kind(&input.kind);
     let tags_json = serde_json::to_string(&input.tags).map_err(|error| error.to_string())?;
+    let tx = conn
+        .unchecked_transaction()
+        .map_err(|error| error.to_string())?;
 
-    conn.execute(
+    tx.execute(
         "INSERT INTO notes (id, title, content, kind, tone, tags_json, created_at, updated_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         params![id, title, excerpt, kind, input.tone, tags_json, now, now],
     )
     .map_err(|error| error.to_string())?;
+    sync_note_tags(&tx, &id, &input.tags)?;
+    tx.commit().map_err(|error| error.to_string())?;
 
     get_note(conn, &id)
 }
@@ -115,8 +121,11 @@ pub(crate) fn update_note(conn: &Connection, input: UpdateNoteInput) -> Result<N
     let excerpt = clean_optional(input.excerpt);
     let kind = normalize_note_kind(&input.kind);
     let tags_json = serde_json::to_string(&input.tags).map_err(|error| error.to_string())?;
+    let tx = conn
+        .unchecked_transaction()
+        .map_err(|error| error.to_string())?;
 
-    let updated = conn
+    let updated = tx
         .execute(
             "UPDATE notes
              SET title = ?1, content = ?2, kind = ?3, tone = ?4, tags_json = ?5, updated_at = ?6
@@ -129,10 +138,15 @@ pub(crate) fn update_note(conn: &Connection, input: UpdateNoteInput) -> Result<N
         return Err("Note not found".to_string());
     }
 
+    sync_note_tags(&tx, &input.id, &input.tags)?;
+    tx.commit().map_err(|error| error.to_string())?;
+
     get_note(conn, &input.id)
 }
 
 pub(crate) fn delete_note(conn: &Connection, id: String) -> Result<(), String> {
+    conn.execute("DELETE FROM note_tags WHERE note_id = ?1", params![id])
+        .map_err(|error| error.to_string())?;
     conn.execute("DELETE FROM notes WHERE id = ?1", params![id])
         .map_err(|error| error.to_string())?;
     Ok(())

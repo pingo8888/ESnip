@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "../../i18n";
-import { listTags } from "../home/notesRepository";
+import { listTags, type SuggestionItem } from "../home/notesRepository";
 
-type SuggestionMap = Record<string, string[]>;
+type SuggestionMap = Record<string, SuggestionItem[]>;
 
 const props = withDefaults(
   defineProps<{
@@ -28,7 +28,7 @@ const emit = defineEmits<{
 
 const inputEl = ref<HTMLInputElement | null>(null);
 const listEl = ref<HTMLElement | null>(null);
-const suggestions = ref<string[]>([]);
+const suggestions = ref<SuggestionItem[]>([]);
 const highlightedIndex = ref(0);
 const activeToken = ref<{ start: number; end: number; query: string; trigger: string } | null>(null);
 const { t } = useI18n();
@@ -86,7 +86,7 @@ function handleKeydown(event: KeyboardEvent) {
   if (event.key === "Enter") {
     event.preventDefault();
     event.stopPropagation();
-    selectTag(suggestions.value[highlightedIndex.value]);
+    selectSuggestion(suggestions.value[highlightedIndex.value]);
     return;
   }
 
@@ -136,24 +136,24 @@ async function loadSuggestions(token: { query: string; trigger: string }) {
   }
 }
 
-function filterExistingSuggestions(trigger: string, suggestions: string[]) {
+function filterExistingSuggestions(trigger: string, suggestions: SuggestionItem[]) {
   const existingSuggestions = parseExistingSuggestions(trigger);
 
   return suggestions.filter(
-    (suggestion) => !existingSuggestions.some((existingSuggestion) => existingSuggestion.toLowerCase() === suggestion.toLowerCase()),
+    (suggestion) => !existingSuggestions.some((existingSuggestion) => existingSuggestion.toLowerCase() === suggestion.label.toLowerCase()),
   );
 }
 
-function buildSuggestions(token: { query: string; trigger: string }, tags: string[], staticSuggestions: string[]) {
+function buildSuggestions(token: { query: string; trigger: string }, tags: SuggestionItem[], staticSuggestions: SuggestionItem[]) {
   const normalizedPrefix = token.query.toLowerCase();
   const matchedStaticSuggestions = staticSuggestions.filter((suggestion) =>
-    suggestion.toLowerCase().startsWith(normalizedPrefix),
+    suggestion.label.toLowerCase().startsWith(normalizedPrefix),
   );
   const mergedSuggestions = [...matchedStaticSuggestions, ...tags];
-  const uniqueSuggestions: string[] = [];
+  const uniqueSuggestions: SuggestionItem[] = [];
 
   for (const suggestion of mergedSuggestions) {
-    if (!uniqueSuggestions.some((item) => item.toLowerCase() === suggestion.toLowerCase())) {
+    if (!uniqueSuggestions.some((item) => item.label.toLowerCase() === suggestion.label.toLowerCase())) {
       uniqueSuggestions.push(suggestion);
     }
   }
@@ -166,7 +166,7 @@ function parseExistingSuggestions(trigger: string) {
   const excludedStart = activeToken.value?.start ?? -1;
   const excludedEnd = activeToken.value?.end ?? -1;
   const suggestions = new Set<string>();
-  const suggestionPattern = new RegExp(`${escapeRegExp(trigger)}([^\\s,，#!@]+)`, "g");
+  const suggestionPattern = /[^\s,，]+/g;
   let match: RegExpExecArray | null;
 
   while ((match = suggestionPattern.exec(value))) {
@@ -174,13 +174,23 @@ function parseExistingSuggestions(trigger: string) {
       continue;
     }
 
-    suggestions.add(match[1].trim());
+    const token = match[0];
+
+    if (!token.startsWith(trigger)) {
+      continue;
+    }
+
+    const suggestion = token.slice(trigger.length).trim();
+
+    if (suggestion) {
+      suggestions.add(suggestion);
+    }
   }
 
   return [...suggestions];
 }
 
-function selectTag(tag: string) {
+function selectSuggestion(suggestion: SuggestionItem) {
   if (!activeToken.value) {
     return;
   }
@@ -188,8 +198,8 @@ function selectTag(tag: string) {
   const value = props.modelValue;
   const before = value.slice(0, activeToken.value.start);
   const after = value.slice(activeToken.value.end).replace(/^\s*/, "");
-  const nextValue = `${before}${activeToken.value.trigger}${tag} ${after}`;
-  const nextCursor = before.length + activeToken.value.trigger.length + tag.length + 1;
+  const nextValue = `${before}${activeToken.value.trigger}${suggestion.label} ${after}`;
+  const nextCursor = before.length + activeToken.value.trigger.length + suggestion.label.length + 1;
 
   emit("update:modelValue", nextValue);
   closeSuggestions();
@@ -238,10 +248,6 @@ function findActiveTagToken(value: string, cursor: number) {
   };
 }
 
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 watch(
   () => props.modelValue,
   (value) => {
@@ -272,15 +278,16 @@ watch(isOpen, (value) => {
     <div v-if="isOpen" class="tag-suggestions" role="listbox">
       <div ref="listEl" class="tag-suggestions-list" tabindex="-1">
         <button
-          v-for="(tag, index) in suggestions"
-          :key="tag"
+          v-for="(suggestion, index) in suggestions"
+          :key="suggestion.label"
           type="button"
           tabindex="-1"
           :class="{ 'is-active': highlightedIndex === index }"
           role="option"
-          @mousedown.prevent="selectTag(tag)"
+          @mousedown.prevent="selectSuggestion(suggestion)"
         >
-          <span>{{ activeToken?.trigger ?? "#" }}{{ tag }}</span>
+          <span class="suggestion-label">{{ activeToken?.trigger ?? "#" }}{{ suggestion.label }}</span>
+          <span class="suggestion-count">{{ suggestion.count }}</span>
         </button>
       </div>
 

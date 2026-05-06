@@ -28,6 +28,20 @@ pub(crate) struct NotesCursor {
     pub(crate) id: String,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct TagSuggestionDto {
+    pub(crate) label: String,
+    pub(crate) count: i64,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct NoteKindCountDto {
+    pub(crate) value: String,
+    pub(crate) count: i64,
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct SaveNoteInput {

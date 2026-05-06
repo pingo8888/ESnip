@@ -4,6 +4,7 @@ mod migration;
 pub(crate) mod repository;
 mod schema;
 pub(crate) mod search;
+mod tag_index;
 pub(crate) mod tags;
 pub(crate) mod types;
 
@@ -14,5 +15,7 @@ pub(crate) use repository::{
     create_note, delete_note, find_note_by_title, list_notes_page, update_note,
 };
 pub(crate) use search::search_notes;
-pub(crate) use tags::list_tags;
-pub(crate) use types::{NoteDto, NotesPage, SaveNoteInput, UpdateNoteInput};
+pub(crate) use tags::{list_note_kind_counts, list_tags};
+pub(crate) use types::{
+    NoteDto, NoteKindCountDto, NotesPage, SaveNoteInput, TagSuggestionDto, UpdateNoteInput,
+};

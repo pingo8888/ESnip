@@ -18,10 +18,25 @@ type BackendNotesPage = {
   totalCount: number;
 };
 
+type BackendTagSuggestion = {
+  label: string;
+  count: number;
+};
+
+type BackendNoteKindCount = {
+  value: Note["kind"];
+  count: number;
+};
+
 export type NotesPage = {
   notes: Note[];
   nextCursor: NotesCursor | null;
   totalCount: number;
+};
+
+export type SuggestionItem = {
+  label: string;
+  count: number;
 };
 
 export async function listNotesPage(cursor: NotesCursor | null, limit = 80): Promise<NotesPage> {
@@ -58,8 +73,12 @@ export async function findNoteByTitle(title: string): Promise<Note | null> {
   return note ? mapBackendNote(note) : null;
 }
 
-export async function listTags(prefix: string, limit = 50): Promise<string[]> {
-  return invoke<string[]>("list_tags", { limit, prefix });
+export async function listTags(prefix: string, limit = 50): Promise<SuggestionItem[]> {
+  return invoke<BackendTagSuggestion[]>("list_tags", { limit, prefix });
+}
+
+export async function listNoteKindCounts(): Promise<BackendNoteKindCount[]> {
+  return invoke<BackendNoteKindCount[]>("list_note_kind_counts");
 }
 
 export async function createNote(input: NoteInput): Promise<Note> {

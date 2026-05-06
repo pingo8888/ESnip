@@ -44,6 +44,7 @@ fn rebuild_notes_table_with_english_kinds(conn: &Connection) -> Result<(), Strin
         DROP TRIGGER IF EXISTS notes_ai;
         DROP TRIGGER IF EXISTS notes_ad;
         DROP TRIGGER IF EXISTS notes_au;
+        DROP TABLE IF EXISTS note_tags;
         DROP TABLE IF EXISTS notes_fts;
         DROP TABLE IF EXISTS notes_legacy_kind;
         ALTER TABLE notes RENAME TO notes_legacy_kind;
