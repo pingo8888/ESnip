@@ -15,7 +15,7 @@ pub(crate) use repository::{
     create_note, delete_note, find_note_by_title, list_notes_page, update_note,
 };
 pub(crate) use search::search_notes;
-pub(crate) use tags::{list_note_kind_counts, list_tags};
+pub(crate) use tags::{delete_tag, list_note_kind_counts, list_tags, rename_tag};
 pub(crate) use types::{
     NoteDto, NoteKindCountDto, NotesPage, SaveNoteInput, TagSuggestionDto, UpdateNoteInput,
 };

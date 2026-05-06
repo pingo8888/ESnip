@@ -28,6 +28,7 @@
 .icon-button,
 .settings-sidebar button,
 .path-row button,
+.tag-actions button,
 .shortcut-row button,
 .update-row button {
   border: 0;
@@ -289,6 +290,7 @@
 }
 
 .path-row button,
+.tag-actions button,
 .shortcut-row button {
   height: 36px;
   border: 1px solid var(--line);
@@ -297,6 +299,87 @@
   background: rgba(255, 254, 250, 0.58);
   font-size: 0.9rem;
   white-space: nowrap;
+}
+
+.tag-manager-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.tag-manager-item {
+  display: grid;
+  min-height: 42px;
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) max-content max-content;
+  gap: 12px;
+  border: 1px solid rgba(225, 216, 202, 0.82);
+  padding: 6px 8px 6px 12px;
+  background: rgba(255, 254, 250, 0.48);
+}
+
+.tag-name,
+.tag-count,
+.tag-edit-field {
+  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+}
+
+.tag-name {
+  overflow: hidden;
+  color: #2f2b25;
+  font-size: 0.96rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-count {
+  color: #92877c;
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+
+.tag-actions {
+  display: inline-flex;
+  gap: 7px;
+  justify-content: flex-end;
+}
+
+.tag-actions button {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 0.86rem;
+}
+
+.tag-actions button:disabled {
+  color: #b0a69a;
+}
+
+.tag-edit-field {
+  display: flex;
+  min-width: 0;
+  height: 34px;
+  align-items: center;
+  border: 1px solid var(--line);
+  background: rgba(255, 254, 250, 0.72);
+}
+
+.tag-edit-field span {
+  padding-left: 10px;
+  color: #8d8278;
+}
+
+.tag-edit-field input {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  padding: 0 10px 0 4px;
+  color: var(--text);
+  background: transparent;
+  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  font-size: 0.94rem;
+  outline: none;
 }
 
 .shortcut-row {
@@ -383,6 +466,14 @@
 
   .path-row {
     grid-template-columns: 1fr;
+  }
+
+  .tag-manager-item {
+    grid-template-columns: 1fr;
+  }
+
+  .tag-actions {
+    justify-content: flex-start;
   }
 
 }

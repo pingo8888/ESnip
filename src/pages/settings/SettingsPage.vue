@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { getVersion } from "@tauri-apps/api/app";
 import { ArrowLeft, ChevronDown, Settings } from "lucide-vue-next";
 import { useI18n } from "../../i18n";
@@ -14,12 +14,15 @@ import { useAppSettings } from "../../settings/useAppSettings";
 import { formatHotkeyParts, normalizeHotkeyFromKeyboardEvent } from "../../settings/hotkeys";
 import { useAppUpdater } from "../../updates/useAppUpdater";
 import type { Locale, MessageKey } from "../../i18n/types";
+import SettingsTagDeleteConfirm from "./SettingsTagDeleteConfirm.vue";
+import { deleteTag, listAllTags, renameTag, type TagSummary } from "./tagSettingsRepository";
 
-type SettingsTab = "general" | "shortcuts";
+type SettingsTab = "general" | "tags" | "shortcuts";
 
-const tabs: SettingsTab[] = ["general", "shortcuts"];
+const tabs: SettingsTab[] = ["general", "tags", "shortcuts"];
 const tabLabelKeys: Record<SettingsTab, MessageKey> = {
   general: "settings.tabs.general",
+  tags: "settings.tabs.tags",
   shortcuts: "settings.tabs.shortcuts",
 };
 
@@ -30,6 +33,13 @@ const isMigratingDataDir = ref(false);
 const capturingHotkey = ref<HotkeyAction | null>(null);
 const hotkeyDraft = ref("");
 const storageMessage = ref("");
+const tags = ref<TagSummary[]>([]);
+const tagsMessage = ref("");
+const isLoadingTags = ref(false);
+const busyTag = ref("");
+const editingTag = ref("");
+const tagDraft = ref("");
+const deleteTarget = ref<TagSummary | null>(null);
 const shortcutMessages = reactive<Record<HotkeyAction, string>>({
   content: "",
   paragraph: "",
@@ -43,9 +53,12 @@ const { checkAndInstallUpdate, isBusy: isUpdateBusy, message: updateMessage } = 
 const emit = defineEmits<{
   back: [];
   dataDirChanged: [];
+  tagsChanged: [];
 }>();
 
 const activeTabLabel = computed(() => t(tabLabelKeys[activeTab.value]));
+const hasTags = computed(() => tags.value.length > 0);
+const tagTotalText = computed(() => t("settings.tags.total", { count: tags.value.length }));
 const shortcutItems = computed(() => [
   {
     action: "title" as const,
@@ -109,6 +122,88 @@ async function revealCurrentDataDir() {
     await revealDataDir();
   } catch (error) {
     storageMessage.value = translateError(error);
+  }
+}
+
+async function loadTags() {
+  if (isLoadingTags.value) {
+    return;
+  }
+
+  try {
+    isLoadingTags.value = true;
+    tagsMessage.value = "";
+    tags.value = await listAllTags();
+  } catch (error) {
+    tagsMessage.value = translateError(error);
+  } finally {
+    isLoadingTags.value = false;
+  }
+}
+
+function startEditingTag(tag: TagSummary) {
+  editingTag.value = tag.label;
+  tagDraft.value = tag.label;
+  tagsMessage.value = "";
+}
+
+function cancelEditingTag() {
+  editingTag.value = "";
+  tagDraft.value = "";
+}
+
+async function saveTagEdit(oldTag: string) {
+  const newTag = tagDraft.value.trim().replace(/^#+/, "").trim();
+
+  if (!newTag) {
+    tagsMessage.value = t("settings.tags.emptyError");
+    return;
+  }
+
+  if (/\s/.test(newTag)) {
+    tagsMessage.value = t("settings.tags.whitespaceError");
+    return;
+  }
+
+  try {
+    busyTag.value = oldTag;
+    tags.value = await renameTag(oldTag, newTag);
+    tagsMessage.value = t("settings.tags.renameSaved");
+    cancelEditingTag();
+    emit("tagsChanged");
+  } catch (error) {
+    tagsMessage.value = translateError(error);
+  } finally {
+    busyTag.value = "";
+  }
+}
+
+function requestDeleteTag(tag: TagSummary) {
+  deleteTarget.value = tag;
+  tagsMessage.value = "";
+}
+
+function cancelDeleteTag() {
+  deleteTarget.value = null;
+}
+
+async function confirmDeleteTag() {
+  if (!deleteTarget.value) {
+    return;
+  }
+
+  const tag = deleteTarget.value.label;
+
+  try {
+    busyTag.value = tag;
+    tags.value = await deleteTag(tag);
+    tagsMessage.value = t("settings.tags.deleteSaved");
+    cancelDeleteTag();
+    emit("tagsChanged");
+  } catch (error) {
+    tagsMessage.value = translateError(error);
+  } finally {
+    busyTag.value = "";
   }
 }
 
@@ -195,6 +290,16 @@ function handleSettingsKeydown(event: KeyboardEvent) {
     return;
   }
 
+  if (deleteTarget.value) {
+    cancelDeleteTag();
+    return;
+  }
+
+  if (editingTag.value) {
+    cancelEditingTag();
+    return;
+  }
+
   emit("back");
 }
 
@@ -209,11 +314,18 @@ async function loadAppVersion() {
 onMounted(() => {
   window.addEventListener("keydown", handleSettingsKeydown, true);
   void loadAppVersion();
+  void loadTags();
 });
 
 onUnmounted(() => {
   window.removeEventListener("keydown", handleSettingsKeydown, true);
   void setHotkeysEnabled(true);
+});
+
+watch(activeTab, (tab) => {
+  if (tab === "tags") {
+    void loadTags();
+  }
 });
 </script>
 
@@ -306,6 +418,60 @@ onUnmounted(() => {
             </section>
           </div>
 
+          <div v-else-if="activeTab === 'tags'" class="settings-panel">
+            <section class="setting-row">
+              <span class="setting-title">{{ t("settings.tags.title") }}</span>
+              <span class="setting-description">{{ tagTotalText }}</span>
+
+              <span v-if="isLoadingTags" class="setting-description">{{ t("settings.tags.loading") }}</span>
+              <span v-else-if="!hasTags" class="setting-description">{{ t("settings.tags.empty") }}</span>
+
+              <div v-else class="tag-manager-list">
+                <div v-for="tag in tags" :key="tag.label" class="tag-manager-item">
+                  <template v-if="editingTag === tag.label">
+                    <span class="tag-edit-field">
+                      <span aria-hidden="true">#</span>
+                      <input
+                        v-model="tagDraft"
+                        type="text"
+                        maxlength="80"
+                        @keydown.enter.prevent="saveTagEdit(tag.label)"
+                        @keydown.esc.prevent="cancelEditingTag"
+                      />
+                    </span>
+
+                    <span class="tag-count">{{ t("settings.tags.cardCount", { count: tag.count }) }}</span>
+
+                    <span class="tag-actions">
+                      <button type="button" :disabled="busyTag === tag.label" @click="saveTagEdit(tag.label)">
+                        {{ t("common.save") }}
+                      </button>
+                      <button type="button" :disabled="busyTag === tag.label" @click="cancelEditingTag">
+                        {{ t("common.cancel") }}
+                      </button>
+                    </span>
+                  </template>
+
+                  <template v-else>
+                    <span class="tag-name">#{{ tag.label }}</span>
+                    <span class="tag-count">{{ t("settings.tags.cardCount", { count: tag.count }) }}</span>
+
+                    <span class="tag-actions">
+                      <button type="button" :disabled="Boolean(busyTag)" @click="startEditingTag(tag)">
+                        {{ t("common.edit") }}
+                      </button>
+                      <button type="button" :disabled="Boolean(busyTag)" @click="requestDeleteTag(tag)">
+                        {{ t("common.delete") }}
+                      </button>
+                    </span>
+                  </template>
+                </div>
+              </div>
+
+              <span v-if="tagsMessage" class="setting-description">{{ tagsMessage }}</span>
+            </section>
+          </div>
+
           <div v-else-if="activeTab === 'shortcuts'" class="settings-panel">
             <section v-for="item in shortcutItems" :key="item.action" class="setting-row">
               <span class="setting-title">{{ item.title }}</span>
@@ -340,6 +506,13 @@ onUnmounted(() => {
         </section>
       </div>
     </div>
+
+    <SettingsTagDeleteConfirm
+      v-if="deleteTarget"
+      :tag="deleteTarget"
+      @cancel="cancelDeleteTag"
+      @confirm="confirmDeleteTag"
+    />
   </main>
 </template>
 

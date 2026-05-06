@@ -62,6 +62,27 @@ pub(crate) fn list_note_kind_counts(
 }
 
 #[tauri::command]
+pub(crate) fn rename_tag(
+    state: State<'_, DbState>,
+    old_tag: String,
+    new_tag: String,
+) -> Result<Vec<TagSuggestionDto>, String> {
+    let conn = state.conn.lock().map_err(|error| error.to_string())?;
+
+    crate::store::notes::rename_tag(&conn, old_tag, new_tag)
+}
+
+#[tauri::command]
+pub(crate) fn delete_tag(
+    state: State<'_, DbState>,
+    tag: String,
+) -> Result<Vec<TagSuggestionDto>, String> {
+    let conn = state.conn.lock().map_err(|error| error.to_string())?;
+
+    crate::store::notes::delete_tag(&conn, tag)
+}
+
+#[tauri::command]
 pub(crate) fn create_note(
     state: State<'_, DbState>,
     input: SaveNoteInput,

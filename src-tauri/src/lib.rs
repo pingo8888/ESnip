@@ -5,10 +5,10 @@ mod store;
 use crate::app::{
     bootstrap::setup_app,
     commands::{
-        choose_data_dir, create_note, delete_note, find_note_by_title, get_app_settings,
-        list_note_kind_counts, list_notes_page, list_tags, migrate_data_dir, reveal_data_dir,
-        search_notes, set_hotkeys_enabled, update_app_chrome_title, update_app_settings,
-        update_note,
+        choose_data_dir, create_note, delete_note, delete_tag, find_note_by_title,
+        get_app_settings, list_note_kind_counts, list_notes_page, list_tags, migrate_data_dir,
+        rename_tag, reveal_data_dir, search_notes, set_hotkeys_enabled, update_app_chrome_title,
+        update_app_settings, update_note,
     },
     platform::{handle_window_event, show_main_window},
     state::{AppQuitState, HotkeyEnabled, HotkeyShutdown, HotkeyState},
@@ -35,6 +35,8 @@ pub fn run() {
             find_note_by_title,
             list_tags,
             list_note_kind_counts,
+            rename_tag,
+            delete_tag,
             create_note,
             update_note,
             delete_note,

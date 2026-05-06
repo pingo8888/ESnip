@@ -40,6 +40,15 @@ export function useNoteCollection() {
     }
   }
 
+  async function refreshNotes() {
+    if (searchQuery.value.trim()) {
+      await applySearchQuery(searchQuery.value);
+      return;
+    }
+
+    await loadInitialNotes();
+  }
+
   async function loadNextNotesPage() {
     if (isLoading.value) {
       return;
@@ -162,6 +171,7 @@ export function useNoteCollection() {
     loadNextNotesPage,
     nextCursor,
     notes,
+    refreshNotes,
     searchQuery,
     setSearchQuery,
     totalCount,

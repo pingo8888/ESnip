@@ -27,7 +27,7 @@ type QuickCaptureContentPayload = {
 
 const activePage = ref<ActivePage>("home");
 const settingsReturnPage = ref<WorkPage | null>(null);
-const { notes, addNote, deleteNote, loadInitialNotes, loadNextNotesPage, searchQuery, setSearchQuery, totalCount, updateNote } = useNoteCollection();
+const { notes, addNote, deleteNote, loadInitialNotes, loadNextNotesPage, refreshNotes, searchQuery, setSearchQuery, totalCount, updateNote } = useNoteCollection();
 const { checkAndInstallUpdate, checkForUpdate, hasUpdate, isBusy: isUpdateBusy } = useAppUpdater();
 const editingNote = ref<Note | null>(null);
 const deletingNote = ref<Note | null>(null);
@@ -192,6 +192,11 @@ async function handleDataDirChanged() {
   void nextTick(updateNotesScrollWidth);
 }
 
+async function handleTagsChanged() {
+  await refreshNotes();
+  void nextTick(updateNotesScrollWidth);
+}
+
 onMounted(() => {
   void initI18n();
   void loadInitialNotes();
@@ -289,7 +294,12 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
       @save="saveEditedNote"
     />
 
-    <SettingsPage v-if="activePage === 'settings'" @back="returnFromSettings" @data-dir-changed="handleDataDirChanged" />
+    <SettingsPage
+      v-if="activePage === 'settings'"
+      @back="returnFromSettings"
+      @data-dir-changed="handleDataDirChanged"
+      @tags-changed="handleTagsChanged"
+    />
 
     <DeleteNoteConfirm
       v-if="deletingNote"
