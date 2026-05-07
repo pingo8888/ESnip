@@ -17,7 +17,7 @@
   left: 0;
   overflow: hidden;
   border: 1px solid var(--color-border);
-  background: var(--color-field-bg);
+  background: var(--color-panel);
   box-shadow: 0 16px 34px var(--shadow-soft-color);
 }
 
@@ -75,7 +75,7 @@
   border-top: 1px solid var(--color-line-soft);
   padding: 6px 10px 7px;
   color: var(--color-subtle);
-  background: var(--color-field-bg-soft);
+  background: var(--color-paper-deep);
   font-family: var(--font-ui);
   font-size: 0.76rem;
   white-space: nowrap;
