@@ -1,31 +1,3 @@
-.settings-shell {
-  --paper: #fbfaf6;
-  --line: #e4dccf;
-  --text: #2f2b25;
-  --ink: #24313d;
-  --sage: #75806f;
-  --ochre: #b79862;
-  --clay: #b86f52;
-
-  display: flex;
-  height: 100%;
-  min-height: 0;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.settings-toolbar {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 46px;
-  border-bottom: 1px solid rgba(225, 216, 202, 0.72);
-  padding: 0 24px;
-}
-
-.back-button,
-.icon-button,
 .settings-sidebar button,
 .path-row button,
 .tag-actions button,
@@ -35,64 +7,12 @@
   padding: 0;
   background: transparent;
   cursor: default;
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
-}
-
-.back-button,
-.icon-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #5e554b;
-  line-height: 1;
-}
-
-.back-button {
-  gap: 7px;
-  font-size: 0.88rem;
-}
-
-.icon-button {
-  width: 30px;
-  height: 30px;
-}
-
-.back-button:hover,
-.icon-button:hover {
-  color: #1f1b17;
-  background: rgba(99, 87, 74, 0.08);
-}
-
-.back-button svg,
-.icon-button svg {
-  width: 16px;
-  height: 16px;
-  stroke-width: 1.8;
+  font-family: var(--font-ui);
 }
 
 .settings-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
   padding: 40px 24px 40px;
   scrollbar-gutter: stable;
-  scrollbar-color: rgba(128, 119, 108, 0.64) rgba(232, 224, 211, 0.64);
-  scrollbar-width: thin;
-}
-
-.settings-scroll::-webkit-scrollbar {
-  width: 10px;
-}
-
-.settings-scroll::-webkit-scrollbar-track {
-  background: rgba(232, 224, 211, 0.64);
-}
-
-.settings-scroll::-webkit-scrollbar-thumb {
-  border: 2px solid rgba(232, 224, 211, 0.64);
-  border-radius: 999px;
-  background: rgba(128, 119, 108, 0.64);
 }
 
 .settings-layout {
@@ -113,7 +33,7 @@
 .settings-sidebar h1,
 .settings-heading h2 {
   margin: 0;
-  color: #15120f;
+  color: var(--color-heading);
   font-size: clamp(1.9rem, 3vw, 2.35rem);
   font-weight: 500;
   line-height: 1;
@@ -129,14 +49,14 @@
 .settings-sidebar button {
   height: 34px;
   padding: 0 12px;
-  color: #4f473e;
+  color: var(--color-body-copy);
   font-size: 0.94rem;
   text-align: left;
 }
 
 .settings-sidebar button.is-active {
-  color: #15120f;
-  background: rgba(218, 207, 188, 0.45);
+  color: var(--color-heading);
+  background: var(--color-field-bg-soft);
   font-weight: 700;
 }
 
@@ -144,8 +64,8 @@
   margin-top: 34px;
   border-top: 1px solid var(--line);
   padding: 16px 12px 0;
-  color: #a1968a;
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  color: var(--color-muted-soft);
+  font-family: var(--font-ui);
   font-size: 0.82rem;
   letter-spacing: 0.08em;
 }
@@ -172,22 +92,22 @@
 }
 
 .setting-title {
-  color: #15120f;
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  color: var(--color-heading);
+  font-family: var(--font-ui);
   font-size: 0.96rem;
   font-weight: 700;
 }
 
 .setting-title--caps {
-  color: #91877c;
+  color: var(--color-subtle);
   font-size: 0.76rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
 }
 
 .setting-description {
-  color: #8a7f74;
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  color: var(--color-subtle);
+  font-family: var(--font-ui);
   font-size: 0.9rem;
 }
 
@@ -197,8 +117,8 @@
   border: 1px solid var(--line);
   padding: 0 12px;
   color: var(--text);
-  background: rgba(255, 254, 250, 0.72);
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  background: var(--color-field-bg);
+  font-family: var(--font-ui);
   font-size: 0.94rem;
 }
 
@@ -215,9 +135,9 @@
   border: 1px solid var(--line);
   padding: 0 12px;
   color: var(--text);
-  background: rgba(255, 254, 250, 0.72);
+  background: var(--color-field-bg);
   cursor: default;
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  font-family: var(--font-ui);
   font-size: 0.94rem;
   text-align: left;
 }
@@ -231,7 +151,7 @@
 .select-trigger svg {
   width: 15px;
   height: 15px;
-  color: #6c6258;
+  color: var(--color-body-muted);
   stroke-width: 1.8;
 }
 
@@ -242,38 +162,38 @@
   left: 0;
   display: grid;
   width: 100%;
-  border: 1px solid #d9d0c2;
-  background: #fffdfa;
-  box-shadow: 0 12px 28px rgba(39, 33, 27, 0.12);
+  border: 1px solid var(--color-border-menu);
+  background: var(--color-panel);
+  box-shadow: 0 12px 28px var(--shadow-menu-color);
 }
 
 .select-menu button {
   position: relative;
   border: 0;
-  background: #fffdfa;
+  background: var(--color-panel);
   padding-left: 30px;
 }
 
 .select-menu button::before {
   position: absolute;
   left: 12px;
-  color: #9a8f83;
+  color: var(--color-muted-soft);
   content: "○";
 }
 
 .select-menu button.is-selected::before {
-  color: #15120f;
+  color: var(--color-heading);
   content: "●";
 }
 
 .select-menu button:hover {
-  background: rgba(218, 207, 188, 0.38);
+  background: var(--color-field-bg-soft);
 }
 
 .shortcut-row kbd,
 .update-row span {
-  color: #5f554b;
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  color: var(--color-body-strong);
+  font-family: var(--font-ui);
   font-size: 0.88rem;
 }
 
@@ -295,8 +215,8 @@
   height: 36px;
   border: 1px solid var(--line);
   padding: 0 16px;
-  color: #3e372f;
-  background: rgba(255, 254, 250, 0.58);
+  color: var(--color-form-text);
+  background: var(--color-field-bg);
   font-size: 0.9rem;
   white-space: nowrap;
 }
@@ -313,20 +233,20 @@
   align-items: center;
   grid-template-columns: minmax(0, 1fr) max-content max-content;
   gap: 12px;
-  border: 1px solid rgba(225, 216, 202, 0.82);
+  border: 1px solid var(--color-toolbar-border);
   padding: 6px 8px 6px 12px;
-  background: rgba(255, 254, 250, 0.48);
+  background: var(--color-field-bg-soft);
 }
 
 .tag-name,
 .tag-count,
 .tag-edit-field {
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  font-family: var(--font-ui);
 }
 
 .tag-name {
   overflow: hidden;
-  color: #2f2b25;
+  color: var(--color-text);
   font-size: 0.96rem;
   font-weight: 700;
   text-overflow: ellipsis;
@@ -334,7 +254,7 @@
 }
 
 .tag-count {
-  color: #92877c;
+  color: var(--color-subtle);
   font-size: 0.86rem;
   white-space: nowrap;
 }
@@ -352,7 +272,7 @@
 }
 
 .tag-actions button:disabled {
-  color: #b0a69a;
+  color: var(--color-muted-soft);
 }
 
 .tag-edit-field {
@@ -361,12 +281,12 @@
   height: 34px;
   align-items: center;
   border: 1px solid var(--line);
-  background: rgba(255, 254, 250, 0.72);
+  background: var(--color-field-bg);
 }
 
 .tag-edit-field span {
   padding-left: 10px;
-  color: #8d8278;
+  color: var(--color-subtle);
 }
 
 .tag-edit-field input {
@@ -377,7 +297,7 @@
   padding: 0 10px 0 4px;
   color: var(--text);
   background: transparent;
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  font-family: var(--font-ui);
   font-size: 0.94rem;
   outline: none;
 }
@@ -402,7 +322,7 @@
   align-items: center;
   border: 1px solid var(--line);
   padding: 0 12px;
-  background: rgba(255, 254, 250, 0.5);
+  background: var(--color-field-bg-soft);
   font-weight: 700;
 }
 
@@ -412,8 +332,8 @@
   border: 1px solid var(--line);
   padding: 0 12px;
   color: var(--text);
-  background: rgba(255, 254, 250, 0.72);
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  background: var(--color-field-bg);
+  font-family: var(--font-ui);
   font-size: 0.94rem;
 }
 
@@ -433,8 +353,8 @@
 .update-row button {
   height: 38px;
   padding: 0 18px;
-  color: #fffaf2;
-  background: #2f2b25;
+  color: var(--color-cream);
+  background: var(--color-text);
   font-size: 0.92rem;
   font-weight: 700;
 }

@@ -15,23 +15,21 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <div class="tag-delete-backdrop" role="presentation" @pointerdown.self="$emit('cancel')">
-    <section class="tag-delete-dialog" role="dialog" aria-modal="true" aria-labelledby="tag-delete-title">
+  <div class="confirm-backdrop" role="presentation" @pointerdown.self="$emit('cancel')">
+    <section class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="tag-delete-title">
       <h2 id="tag-delete-title">{{ t("settings.tags.deleteTitle") }}</h2>
 
-      <p class="tag-delete-summary">
+      <p class="confirm-summary">
         #{{ tag.label }}
         <span>· {{ t("settings.tags.cardCount", { count: tag.count }) }}</span>
       </p>
 
-      <p class="tag-delete-copy">{{ t("settings.tags.deleteCopy") }}</p>
+      <p class="confirm-copy">{{ t("settings.tags.deleteCopy") }}</p>
 
-      <div class="tag-delete-actions">
-        <button type="button" class="cancel-button" @click="$emit('cancel')">{{ t("common.cancel") }}</button>
-        <button type="button" class="delete-button" @click="$emit('confirm')">{{ t("common.delete") }}</button>
+      <div class="confirm-actions">
+        <button type="button" class="confirm-cancel-button" @click="$emit('cancel')">{{ t("common.cancel") }}</button>
+        <button type="button" class="confirm-danger-button" @click="$emit('confirm')">{{ t("common.delete") }}</button>
       </div>
     </section>
   </div>
 </template>
-
-<style scoped src="./SettingsTagDeleteConfirm.scoped.css"></style>

@@ -210,7 +210,7 @@ watch(
 
       <div
         :ref="(el) => $emit('notesScrollReady', el as HTMLElement | null)"
-        class="notes-scroll"
+        class="notes-scroll thin-scrollbar"
         tabindex="-1"
         @scroll="handleNotesScroll"
       >

@@ -4,13 +4,13 @@
   flex-direction: column;
   padding: 18px 16px 14px;
   overflow: hidden;
-  border: 1px solid #e5ddcf;
+  border: 1px solid var(--color-line-soft);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.56)),
+    linear-gradient(180deg, var(--color-field-bg), var(--color-field-bg-soft)),
     var(--paper);
   box-shadow:
-    0 1px 0 rgba(44, 36, 28, 0.03),
-    0 18px 44px rgba(50, 42, 33, 0);
+    0 1px 0 transparent,
+    0 18px 44px transparent;
   transition:
     border-color 180ms ease,
     box-shadow 180ms ease,
@@ -39,8 +39,8 @@
 }
 
 .note-card:hover {
-  border-color: #d5c8b7;
-  box-shadow: 0 18px 44px rgba(50, 42, 33, 0.08);
+  border-color: var(--color-border);
+  box-shadow: 0 18px 44px var(--shadow-soft-color);
   transform: translateY(-2px);
 }
 
@@ -74,8 +74,8 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  color: #9b9185;
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  color: var(--color-muted-soft);
+  font-family: var(--font-ui);
   font-size: 0.82rem;
 }
 
@@ -98,7 +98,7 @@
 .note-card h3 {
   user-select: text;
   margin: 12px 0 10px;
-  color: #100f0d;
+  color: var(--color-text);
   font-size: clamp(1rem, 1.25vw, 1.28rem);
   font-weight: 500;
   line-height: 1.08;
@@ -106,10 +106,10 @@
 }
 
 .note-highlight {
-  color: #8f4b2f;
+  color: var(--color-clay);
   background: transparent;
   text-decoration: underline;
-  text-decoration-color: rgba(143, 75, 47, 0.46);
+  text-decoration-color: var(--color-danger-text);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.12em;
   font-weight: 650;
@@ -118,8 +118,8 @@
 .note-excerpt {
   user-select: text;
   margin: 0;
-  color: #5c544b;
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  color: var(--color-body-strong);
+  font-family: var(--font-ui);
   font-size: 0.9rem;
   line-height: 1.45;
 }
@@ -151,8 +151,8 @@
 }
 
 .note-card footer span {
-  color: #877d72;
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  color: var(--color-subtle);
+  font-family: var(--font-ui);
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.08em;

@@ -1,14 +1,4 @@
 .commonplace-shell {
-  --paper: #fbfaf6;
-  --paper-deep: #f6f1e8;
-  --line: #e4dccf;
-  --muted: #8b8175;
-  --text: #2f2b25;
-  --ink: #24313d;
-  --sage: #75806f;
-  --ochre: #b79862;
-  --clay: #b86f52;
-
   display: flex;
   width: auto;
   height: 100%;
@@ -46,7 +36,7 @@
   place-items: center;
   border: 0;
   padding: 0;
-  color: #4c453d;
+  color: var(--color-body-copy);
   background: transparent;
   cursor: default;
   line-height: 1;
@@ -57,8 +47,8 @@
 }
 
 .app-actions button:hover {
-  color: #1f1b17;
-  background: rgba(99, 87, 74, 0.08);
+  color: var(--color-heading-dark);
+  background: var(--color-icon-hover-bg);
 }
 
 .app-actions button:disabled {
@@ -98,8 +88,8 @@
   width: min(636px, 100%);
   height: 54px;
   border: 1px solid var(--line);
-  background: rgba(255, 254, 250, 0.84);
-  box-shadow: 0 1px 0 rgba(55, 48, 41, 0.03);
+  background: var(--color-field-bg);
+  box-shadow: 0 1px 0 transparent;
   transition:
     border-color 180ms ease,
     box-shadow 180ms ease,
@@ -107,8 +97,8 @@
 }
 
 .search-box:focus-within {
-  border-color: rgba(117, 128, 111, 0.72);
-  box-shadow: 0 12px 32px rgba(54, 46, 38, 0.08);
+  border-color: var(--color-focus-border);
+  box-shadow: 0 12px 32px var(--shadow-soft-color);
   transform: translateY(-1px);
 }
 
@@ -117,7 +107,7 @@
   height: 100%;
   place-items: center;
   padding-left: 18px;
-  color: #82786c;
+  color: var(--color-result-muted);
 }
 
 .search-icon svg {
@@ -135,13 +125,13 @@
   padding: 1px 14px 0;
   color: var(--text);
   background: transparent;
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  font-family: var(--font-ui);
   font-size: 1.12rem;
   line-height: 1;
 }
 
 .search-box :deep(input::placeholder) {
-  color: #81786f;
+  color: var(--color-subtle);
 }
 
 .search-box :deep(input::-webkit-search-cancel-button),
@@ -156,14 +146,14 @@
   place-items: center;
   border: 0;
   padding: 0;
-  color: #82786c;
+  color: var(--color-result-muted);
   background: transparent;
   cursor: default;
 }
 
 .search-clear:hover {
-  color: #2f2b25;
-  background: rgba(99, 87, 74, 0.08);
+  color: var(--color-text);
+  background: var(--color-icon-hover-bg);
 }
 
 .search-clear svg {
@@ -178,11 +168,11 @@ kbd {
   justify-content: center;
   min-height: 22px;
   margin-right: 18px;
-  border: 1px solid #e7dfd3;
+  border: 1px solid var(--color-line);
   padding: 0 7px;
-  color: #b6ab9d;
-  background: rgba(255, 255, 255, 0.44);
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  color: var(--color-muted-soft);
+  background: var(--color-field-bg-soft);
+  font-family: var(--font-ui);
   font-size: 0.72rem;
   font-weight: 600;
   line-height: 1;
@@ -192,8 +182,8 @@ kbd {
 .notes-section h2 {
   flex: 0 0 auto;
   margin: 0 0 16px;
-  color: #988e83;
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  color: var(--color-muted-soft);
+  font-family: var(--font-ui);
   font-size: 0.86rem;
   font-weight: 700;
   letter-spacing: 0.24em;
@@ -217,22 +207,6 @@ kbd {
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0 30px 42px 24px;
-  scrollbar-color: rgba(128, 119, 108, 0.64) rgba(232, 224, 211, 0.64);
-  scrollbar-width: thin;
-}
-
-.notes-scroll::-webkit-scrollbar {
-  width: 10px;
-}
-
-.notes-scroll::-webkit-scrollbar-track {
-  background: rgba(232, 224, 211, 0.64);
-}
-
-.notes-scroll::-webkit-scrollbar-thumb {
-  border: 2px solid rgba(232, 224, 211, 0.64);
-  border-radius: 999px;
-  background: rgba(128, 119, 108, 0.64);
 }
 
 .notes-columns {

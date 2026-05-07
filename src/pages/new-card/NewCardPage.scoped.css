@@ -1,88 +1,5 @@
-.new-card-shell {
-  --paper: #fbfaf6;
-  --line: #e4dccf;
-  --text: #2f2b25;
-  --ink: #24313d;
-  --sage: #75806f;
-  --ochre: #b79862;
-  --clay: #b86f52;
-
-  display: flex;
-  height: 100%;
-  min-height: 0;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.new-card-toolbar {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 46px;
-  border-bottom: 1px solid rgba(225, 216, 202, 0.72);
-  padding: 0 24px;
-}
-
-.back-button,
-.icon-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  padding: 0;
-  color: #5e554b;
-  background: transparent;
-  cursor: default;
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
-  line-height: 1;
-}
-
-.back-button {
-  gap: 7px;
-  font-size: 0.88rem;
-}
-
-.icon-button {
-  width: 30px;
-  height: 30px;
-}
-
-.back-button:hover,
-.icon-button:hover {
-  color: #1f1b17;
-  background: rgba(99, 87, 74, 0.08);
-}
-
-.back-button svg,
-.icon-button svg {
-  width: 16px;
-  height: 16px;
-  stroke-width: 1.8;
-}
-
 .new-card-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
   padding: 42px 24px 28px;
-  scrollbar-color: rgba(128, 119, 108, 0.64) rgba(232, 224, 211, 0.64);
-  scrollbar-width: thin;
-}
-
-.new-card-scroll::-webkit-scrollbar {
-  width: 10px;
-}
-
-.new-card-scroll::-webkit-scrollbar-track {
-  background: rgba(232, 224, 211, 0.64);
-}
-
-.new-card-scroll::-webkit-scrollbar-thumb {
-  border: 2px solid rgba(232, 224, 211, 0.64);
-  border-radius: 999px;
-  background: rgba(128, 119, 108, 0.64);
 }
 
 .new-card-form {
@@ -101,7 +18,7 @@
 
 .form-heading h1 {
   margin: 0;
-  color: #15120f;
+  color: var(--color-heading);
   font-size: clamp(1.9rem, 3vw, 2.5rem);
   font-weight: 500;
   line-height: 1;
@@ -120,8 +37,8 @@
 }
 
 .field-label {
-  color: #8d8378;
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  color: var(--color-subtle);
+  font-family: var(--font-ui);
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -129,7 +46,7 @@
 
 .field-help {
   margin: 0;
-  color: #978c80;
+  color: var(--color-muted-soft);
   font-style: italic;
   font-size: 0.88rem;
 }
@@ -146,10 +63,10 @@
   height: 42px;
   border: 1px solid var(--line);
   padding: 0 18px;
-  background: rgba(255, 254, 250, 0.62);
-  color: #3e372f;
+  background: var(--color-field-bg);
+  color: var(--color-form-text);
   cursor: default;
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  font-family: var(--font-ui);
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -157,9 +74,9 @@
 
 .kind-options button.is-active,
 .primary-action {
-  border-color: #2f2b25;
-  color: #fffaf2;
-  background: #2f2b25;
+  border-color: var(--color-text);
+  color: var(--color-cream);
+  background: var(--color-text);
 }
 
 input,
@@ -170,8 +87,8 @@ textarea {
   border: 1px solid var(--line);
   padding: 0 16px;
   color: var(--text);
-  background: rgba(255, 254, 250, 0.78);
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  background: var(--color-field-bg);
+  font-family: var(--font-ui);
   font-size: 1rem;
 }
 
@@ -190,14 +107,14 @@ textarea {
 input::placeholder,
 .field-group :deep(.tag-suggest-input > input::placeholder),
 textarea::placeholder {
-  color: #8f857a;
+  color: var(--color-subtle);
 }
 
 input:focus,
 .field-group :deep(.tag-suggest-input > input:focus),
 textarea:focus {
-  border-color: rgba(117, 128, 111, 0.72);
-  box-shadow: 0 12px 32px rgba(54, 46, 38, 0.07);
+  border-color: var(--color-focus-border);
+  box-shadow: 0 12px 32px var(--shadow-soft-color);
 }
 
 .split-row {
@@ -223,13 +140,13 @@ textarea:focus {
   height: 24px;
   border: 1px solid var(--line);
   padding: 4px;
-  background: rgba(255, 254, 250, 0.72);
+  background: var(--color-field-bg);
   background-clip: content-box;
   cursor: default;
 }
 
 .tone-options button.is-active {
-  border-color: #6d6258;
+  border-color: var(--color-body-muted);
 }
 
 .tone-option--sage {
@@ -265,8 +182,8 @@ textarea:focus {
 }
 
 .secondary-action {
-  color: #6a6056;
-  background: rgba(255, 254, 250, 0.42);
+  color: var(--color-body-muted);
+  background: var(--color-field-bg-soft);
 }
 
 @media (max-width: 720px) {

@@ -16,9 +16,9 @@
   right: 0;
   left: 0;
   overflow: hidden;
-  border: 1px solid #d8cfc1;
-  background: rgba(255, 254, 250, 0.98);
-  box-shadow: 0 16px 34px rgba(54, 46, 38, 0.12);
+  border: 1px solid var(--color-border);
+  background: var(--color-field-bg);
+  box-shadow: 0 16px 34px var(--shadow-soft-color);
 }
 
 .tag-suggestions-list {
@@ -36,10 +36,10 @@
   gap: 12px;
   border: 0;
   padding: 0 10px;
-  color: #3d372f;
+  color: var(--color-form-text);
   background: transparent;
   cursor: default;
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  font-family: var(--font-ui);
   font-size: 0.92rem;
   text-align: left;
 }
@@ -52,31 +52,31 @@
 
 .suggestion-count {
   flex: 0 0 auto;
-  color: #9a9085;
+  color: var(--color-muted-soft);
   font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
 }
 
 .tag-suggestions button.is-active,
 .tag-suggestions button:hover {
-  color: #fffaf2;
-  background: #75806f;
+  color: var(--color-cream);
+  background: var(--color-sage);
 }
 
 .tag-suggestions button.is-active .suggestion-count,
 .tag-suggestions button:hover .suggestion-count {
-  color: rgba(255, 250, 242, 0.78);
+  color: var(--color-cream);
 }
 
 .tag-suggestions-help {
   display: flex;
   align-items: center;
   gap: 10px;
-  border-top: 1px solid #e5ddcf;
+  border-top: 1px solid var(--color-line-soft);
   padding: 6px 10px 7px;
-  color: #8f857a;
-  background: rgba(246, 241, 232, 0.72);
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  color: var(--color-subtle);
+  background: var(--color-field-bg-soft);
+  font-family: var(--font-ui);
   font-size: 0.76rem;
   white-space: nowrap;
 }

@@ -2,11 +2,11 @@
   position: fixed;
   z-index: 100;
   width: 198px;
-  border: 1px solid #d9d0c2;
+  border: 1px solid var(--color-border-menu);
   padding: 6px 0;
-  background: #fffdfa;
-  box-shadow: 0 12px 28px rgba(39, 33, 27, 0.12);
-  font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+  background: var(--color-panel);
+  box-shadow: 0 12px 28px var(--shadow-menu-color);
+  font-family: var(--font-ui);
 }
 
 .note-context-menu button {
@@ -15,7 +15,7 @@
   height: 32px;
   border: 0;
   padding: 0 14px;
-  color: #2f2b25;
+  color: var(--color-text);
   background: transparent;
   cursor: default;
   font: inherit;
@@ -24,15 +24,15 @@
 }
 
 .note-context-menu button:hover {
-  background: rgba(117, 128, 111, 0.1);
+  background: var(--color-icon-hover-bg);
 }
 
 .note-context-menu .danger-item {
-  color: #a23f31;
+  color: var(--color-danger-text);
 }
 
 .menu-separator {
   height: 1px;
   margin: 5px 10px;
-  background: #e5ddcf;
+  background: var(--color-line-soft);
 }

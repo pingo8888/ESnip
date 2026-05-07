@@ -330,19 +330,19 @@ watch(activeTab, (tab) => {
 </script>
 
 <template>
-  <main class="settings-shell">
-    <div class="settings-toolbar" :aria-label="t('settings.actions')">
-      <button type="button" class="back-button" @click="$emit('back')">
+  <main class="page-shell">
+    <div class="settings-toolbar page-toolbar" :aria-label="t('settings.actions')">
+      <button type="button" class="page-back-button" @click="$emit('back')">
         <ArrowLeft aria-hidden="true" />
         <span>{{ t("common.back") }}</span>
       </button>
 
-      <button type="button" class="icon-button" :aria-label="t('common.settings')" :title="t('common.settings')">
+      <button type="button" class="page-icon-button" :aria-label="t('common.settings')" :title="t('common.settings')">
         <Settings aria-hidden="true" />
       </button>
     </div>
 
-    <div class="settings-scroll">
+    <div class="settings-scroll page-scroll thin-scrollbar">
       <div class="settings-layout">
         <aside class="settings-sidebar" :aria-label="t('settings.sidebar')">
           <h1>{{ t("common.settings") }}</h1>

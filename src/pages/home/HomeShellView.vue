@@ -53,4 +53,3 @@ defineEmits<{
 </template>
 
 <style scoped src="../HomePage.scoped.css"></style>
-<style src="../../style.css"></style>

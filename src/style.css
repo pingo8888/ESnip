@@ -1,12 +1,56 @@
 :root {
-  color: #2f2b25;
-  background: #f3eee5;
-  font-family:
-    "Iowan Old Style",
-    "Palatino Linotype",
-    Palatino,
-    "Book Antiqua",
-    serif;
+  --font-ui: "Microsoft YaHei", "微软雅黑", sans-serif;
+  --color-text: #2f2b25;
+  --color-app-bg: #f3eee5;
+  --color-app-bg-start: #f4efe6;
+  --color-app-bg-end: #eee7db;
+  --color-paper: #fbfaf6;
+  --color-paper-deep: #f6f1e8;
+  --color-panel: var(--color-paper);
+  --color-cream: var(--color-paper);
+  --color-line: #e4dccf;
+  --color-line-soft: var(--color-line);
+  --color-border: var(--color-line);
+  --color-border-menu: var(--color-line);
+  --color-ink: #24313d;
+  --color-sage: #75806f;
+  --color-ochre: #b79862;
+  --color-clay: #b86f52;
+  --color-danger: #a84536;
+  --color-danger-text: var(--color-danger);
+  --color-heading: var(--color-text);
+  --color-heading-dark: var(--color-text);
+  --color-dialog-title: var(--color-text);
+  --color-body-strong: #5e554b;
+  --color-body-muted: #6b6258;
+  --color-body-copy: #4d453c;
+  --color-form-text: var(--color-body-copy);
+  --color-subtle: #8f857a;
+  --color-muted-soft: var(--color-subtle);
+  --color-result-muted: var(--color-subtle);
+  --color-toolbar-border: rgba(225, 216, 202, 0.72);
+  --color-icon-hover-bg: rgba(99, 87, 74, 0.08);
+  --color-field-bg: rgba(255, 254, 250, 0.72);
+  --color-field-bg-soft: rgba(255, 254, 250, 0.48);
+  --color-focus-border: rgba(117, 128, 111, 0.72);
+  --color-dialog-backdrop: rgba(47, 43, 37, 0.12);
+  --shadow-soft-color: rgba(54, 46, 38, 0.08);
+  --shadow-menu-color: var(--shadow-soft-color);
+  --shadow-dialog-color: rgba(43, 35, 27, 0.2);
+  --color-scroll-track: rgba(232, 224, 211, 0.64);
+  --color-scroll-thumb: rgba(128, 119, 108, 0.64);
+  --paper: var(--color-paper);
+  --paper-deep: var(--color-paper-deep);
+  --line: var(--color-line);
+  --muted: var(--color-subtle);
+  --text: var(--color-text);
+  --ink: var(--color-ink);
+  --sage: var(--color-sage);
+  --ochre: var(--color-ochre);
+  --clay: var(--color-clay);
+  color: var(--color-text);
+  background: var(--color-app-bg);
+  font-family: var(--font-ui);
   font-size: 16px;
   line-height: 1.5;
   font-weight: 400;
@@ -31,7 +75,7 @@ html {
   overflow: hidden;
   background:
     radial-gradient(circle at 14% 8%, rgba(159, 108, 70, 0.08), transparent 26rem),
-    linear-gradient(180deg, #f4efe6 0%, #eee7db 100%);
+    linear-gradient(180deg, var(--color-app-bg-start) 0%, var(--color-app-bg-end) 100%);
 }
 
 body {
@@ -62,4 +106,158 @@ input {
   max-height: 100vh;
   min-height: 100vh;
   overflow: hidden;
+}
+
+.page-shell {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.page-toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 46px;
+  border-bottom: 1px solid var(--color-toolbar-border);
+  padding: 0 24px;
+}
+
+.page-back-button,
+.page-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  color: var(--color-body-strong);
+  background: transparent;
+  cursor: default;
+  font-family: var(--font-ui);
+  line-height: 1;
+}
+
+.page-back-button {
+  gap: 7px;
+  font-size: 0.88rem;
+}
+
+.page-icon-button {
+  width: 30px;
+  height: 30px;
+}
+
+.page-back-button:hover,
+.page-icon-button:hover {
+  color: var(--color-heading-dark);
+  background: var(--color-icon-hover-bg);
+}
+
+.page-back-button svg,
+.page-icon-button svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.8;
+}
+
+.page-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.thin-scrollbar {
+  scrollbar-color: var(--color-scroll-thumb) var(--color-scroll-track);
+  scrollbar-width: thin;
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-scroll-track);
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  border: 2px solid var(--color-scroll-track);
+  border-radius: 999px;
+  background: var(--color-scroll-thumb);
+}
+
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  background: var(--color-dialog-backdrop);
+}
+
+.confirm-dialog {
+  width: min(420px, calc(100vw - 40px));
+  border: 1px solid var(--color-border);
+  padding: 26px 28px 24px;
+  background: var(--color-paper-deep);
+  box-shadow: 0 24px 70px var(--shadow-dialog-color);
+}
+
+.confirm-dialog h2 {
+  margin: 0 0 12px;
+  color: var(--color-dialog-title);
+  font-size: 1.75rem;
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.07em;
+}
+
+.confirm-summary {
+  margin: 0 0 12px;
+  color: var(--color-body-copy);
+  font-family: var(--font-ui);
+  font-size: 0.94rem;
+}
+
+.confirm-summary span {
+  color: var(--color-muted-soft);
+}
+
+.confirm-copy {
+  margin: 0;
+  color: var(--color-body-muted);
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 22px;
+}
+
+.confirm-actions button {
+  height: 40px;
+  border: 1px solid var(--color-border);
+  padding: 0 20px;
+  cursor: default;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.confirm-cancel-button {
+  color: var(--color-body-strong);
+  background: var(--color-field-bg-soft);
+}
+
+.confirm-danger-button {
+  border-color: var(--color-danger) !important;
+  color: var(--color-cream);
+  background: var(--color-danger);
 }

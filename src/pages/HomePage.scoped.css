@@ -17,8 +17,8 @@
   align-items: center;
   width: 100%;
   height: var(--titlebar-height);
-  border-bottom: 1px solid rgba(225, 216, 202, 0.72);
-  background: rgba(243, 238, 229, 0.82);
+  border-bottom: 1px solid var(--color-toolbar-border);
+  background: var(--color-field-bg-soft);
   backdrop-filter: blur(18px);
 }
 
@@ -31,7 +31,7 @@
 }
 
 .window-app-name {
-  color: #5c5349;
+  color: var(--color-body-strong);
   font-size: 0.98rem;
   font-weight: 500;
   letter-spacing: -0.04em;
@@ -51,7 +51,7 @@
   place-items: center;
   border: 0;
   padding: 0;
-  color: #6d6258;
+  color: var(--color-body-muted);
   background: transparent;
   cursor: default;
   line-height: 1;
@@ -68,17 +68,17 @@
 }
 
 .window-controls button:hover {
-  color: #2f2b25;
-  background: rgba(255, 255, 255, 0.5);
+  color: var(--color-text);
+  background: var(--color-field-bg-soft);
 }
 
 .window-controls button:active {
-  background: rgba(214, 202, 185, 0.48);
+  background: var(--color-toolbar-border);
 }
 
 .window-controls .window-close:hover {
-  color: #fffaf2;
-  background: #b85f49;
+  color: var(--color-cream);
+  background: var(--color-danger);
 }
 
 @media (max-width: 620px) {
