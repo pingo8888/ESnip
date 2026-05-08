@@ -1,8 +1,7 @@
 param(
-  [Parameter(Mandatory = $true)]
   [string]$Version,
 
-  [string]$Notes = "ESnip $Version",
+  [string]$Notes,
 
   [string]$PrivateKeyPath = "$env:USERPROFILE\.tauri\esnip-updater.key",
 
@@ -11,14 +10,46 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$Root = Split-Path -Parent $MyInvocation.MyCommand.Path
+Set-Location $Root
+
+$VersionWasProvided = -not [string]::IsNullOrWhiteSpace($Version)
+
+if (-not $VersionWasProvided) {
+  $PackageJson = Get-Content -Raw -LiteralPath (Join-Path $Root "package.json") | ConvertFrom-Json
+  $TauriConfig = Get-Content -Raw -LiteralPath (Join-Path $Root "src-tauri\tauri.conf.json") | ConvertFrom-Json
+  $CargoToml = Get-Content -Raw -LiteralPath (Join-Path $Root "src-tauri\Cargo.toml")
+  $CargoVersionMatch = [regex]::Match($CargoToml, '(?ms)^\[package\]\s+.*?^version\s*=\s*"([^"]+)"')
+
+  if (-not $CargoVersionMatch.Success) {
+    throw "Failed to read current version from src-tauri\Cargo.toml"
+  }
+
+  $Version = [string]$PackageJson.version
+  $VersionSources = [ordered]@{
+    "package.json" = $Version
+    "src-tauri\tauri.conf.json" = [string]$TauriConfig.version
+    "src-tauri\Cargo.toml" = $CargoVersionMatch.Groups[1].Value
+  }
+
+  $MismatchedVersions = $VersionSources.GetEnumerator() | Where-Object { $_.Value -ne $Version }
+  if ($MismatchedVersions) {
+    $Details = ($VersionSources.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ", "
+    throw "Project version files do not match: $Details"
+  }
+}
+
+$Version = $Version.Trim()
+
 if ($Version -notmatch '^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$') {
   throw "Invalid version: $Version"
 }
 
-$Root = Split-Path -Parent $MyInvocation.MyCommand.Path
-Set-Location $Root
+if ([string]::IsNullOrWhiteSpace($Notes)) {
+  $Notes = "ESnip $Version"
+}
 
-if (-not $SkipBump) {
+if ($VersionWasProvided -and -not $SkipBump) {
   node "$Root\bump-version.mjs" $Version
 }
 

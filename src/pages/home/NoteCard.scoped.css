@@ -110,7 +110,6 @@
   font-size: clamp(1rem, 1.25vw, 1.28rem);
   font-weight: 500;
   line-height: 1.08;
-  letter-spacing: -0.07em;
 }
 
 .note-highlight {
