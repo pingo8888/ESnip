@@ -129,7 +129,7 @@ fn normalize_target_dir(target_dir: String) -> Result<PathBuf, String> {
     let trimmed = target_dir.trim();
 
     if trimmed.is_empty() {
-        return Err("Save path cannot be empty".to_string());
+        return Err("errors.dataDirEmpty".to_string());
     }
 
     let path = PathBuf::from(trimmed);
@@ -143,7 +143,7 @@ fn ensure_target_is_available(old_dir: &Path, new_dir: &Path) -> Result<(), Stri
         let target = new_dir.join(file_name);
 
         if source.exists() && target.exists() && !same_path(&source, &target) {
-            return Err(format!("Target folder already contains {file_name}"));
+            return Err(format!("errors.dataDirTargetExists|{file_name}"));
         }
     }
 
@@ -238,7 +238,7 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
 
 #[cfg(not(target_os = "windows"))]
 fn choose_folder() -> Result<Option<String>, String> {
-    Err("Folder selection is only implemented on Windows".to_string())
+    Err("errors.folderSelectionUnsupported".to_string())
 }
 
 #[cfg(target_os = "windows")]

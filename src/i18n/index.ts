@@ -70,6 +70,14 @@ export function t(key: MessageKey, params?: TranslateParams) {
 
 export function translateError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
+  const parameterizedError = message.match(/^(errors\.[^|]+)\|(.+)$/);
+
+  if (parameterizedError) {
+    const [, key, fileName] = parameterizedError;
+    if (key in zhCNMessages) {
+      return t(key as MessageKey, { fileName });
+    }
+  }
 
   if (message.startsWith("errors.") && message in zhCNMessages) {
     return t(message as MessageKey);

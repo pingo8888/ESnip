@@ -94,8 +94,8 @@ pub(crate) fn rename_tag(
     old_tag: String,
     new_tag: String,
 ) -> Result<Vec<TagSuggestionDto>, String> {
-    let old_tag = clean_tag(&old_tag).ok_or_else(|| "Tag is required".to_string())?;
-    let new_tag = clean_tag(&new_tag).ok_or_else(|| "New tag is required".to_string())?;
+    let old_tag = clean_tag(&old_tag).ok_or_else(|| "errors.tagRequired".to_string())?;
+    let new_tag = clean_tag(&new_tag).ok_or_else(|| "errors.newTagRequired".to_string())?;
 
     if old_tag == new_tag {
         return list_tags(conn, String::new(), None);
@@ -107,7 +107,7 @@ pub(crate) fn rename_tag(
     let affected_notes = collect_notes_with_tag(&tx, &old_tag)?;
 
     if affected_notes.is_empty() {
-        return Err("Tag not found".to_string());
+        return Err("errors.tagNotFound".to_string());
     }
 
     for (note_id, tags_json) in affected_notes {
@@ -129,7 +129,7 @@ pub(crate) fn rename_tag(
 }
 
 pub(crate) fn delete_tag(conn: &Connection, tag: String) -> Result<Vec<TagSuggestionDto>, String> {
-    let tag = clean_tag(&tag).ok_or_else(|| "Tag is required".to_string())?;
+    let tag = clean_tag(&tag).ok_or_else(|| "errors.tagRequired".to_string())?;
     let tx = conn
         .unchecked_transaction()
         .map_err(|error| error.to_string())?;

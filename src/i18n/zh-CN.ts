@@ -101,7 +101,14 @@ export const zhCNMessages = {
   "window.unpin": "取消置顶",
   "deleteDialog.copy": "确定移除卡片？此操作无法撤销。",
   "deleteDialog.title": "删除这张卡片？",
+  "errors.dataDirEmpty": "保存路径不能为空。",
+  "errors.dataDirTargetExists": "目标目录已包含数据库文件：{fileName}",
   "errors.duplicateHotkeys": "快捷键不能重复。",
+  "errors.folderSelectionUnsupported": "当前系统暂不支持选择文件夹。",
+  "errors.newTagRequired": "新标签名称不能为空。",
+  "errors.noteNotFound": "卡片不存在或已被删除。",
+  "errors.tagNotFound": "标签不存在或已被删除。",
+  "errors.tagRequired": "标签名称不能为空。",
 } as const;
 
 export type MessageKey = keyof typeof zhCNMessages;

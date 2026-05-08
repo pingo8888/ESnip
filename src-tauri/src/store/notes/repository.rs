@@ -135,7 +135,7 @@ pub(crate) fn update_note(conn: &Connection, input: UpdateNoteInput) -> Result<N
         .map_err(|error| error.to_string())?;
 
     if updated == 0 {
-        return Err("Note not found".to_string());
+        return Err("errors.noteNotFound".to_string());
     }
 
     sync_note_tags(&tx, &input.id, &input.tags)?;
@@ -162,7 +162,7 @@ pub(super) fn get_note(conn: &Connection, id: &str) -> Result<NoteDto, String> {
     )
     .optional()
     .map_err(|error| error.to_string())?
-    .ok_or_else(|| "Note not found".to_string())
+    .ok_or_else(|| "errors.noteNotFound".to_string())
 }
 
 pub(super) fn collect_notes<T>(rows: T) -> Result<Vec<NoteDto>, String>

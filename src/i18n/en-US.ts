@@ -103,5 +103,12 @@ export const enUSMessages = {
   "window.unpin": "Unpin window",
   "deleteDialog.copy": "This card will be removed. This can't be undone.",
   "deleteDialog.title": "Delete this card?",
+  "errors.dataDirEmpty": "Save path cannot be empty.",
+  "errors.dataDirTargetExists": "Target folder already contains database file: {fileName}",
   "errors.duplicateHotkeys": "Hotkeys cannot be duplicated.",
+  "errors.folderSelectionUnsupported": "Folder selection is not supported on this system.",
+  "errors.newTagRequired": "New tag name is required.",
+  "errors.noteNotFound": "Card not found or already deleted.",
+  "errors.tagNotFound": "Tag not found or already deleted.",
+  "errors.tagRequired": "Tag name is required.",
 } satisfies Record<MessageKey, string>;
