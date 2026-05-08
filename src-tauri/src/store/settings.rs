@@ -8,6 +8,7 @@ use tauri::{AppHandle, Manager, Runtime};
 
 const SETTINGS_FILE_NAME: &str = "settings.json";
 const DEFAULT_LOCALE: &str = "zh-CN";
+const DEFAULT_SEARCH_ENGINE: &str = "google";
 pub(crate) const DEFAULT_TITLE_HOTKEY: &str = "Alt+W";
 pub(crate) const DEFAULT_CONTENT_HOTKEY: &str = "Alt+S";
 pub(crate) const DEFAULT_PARAGRAPH_HOTKEY: &str = "Alt+P";
@@ -35,6 +36,8 @@ pub(crate) struct AppSettings {
     data_dir: String,
     #[serde(default)]
     hotkeys: HotkeySettings,
+    #[serde(default = "default_search_engine")]
+    search_engine: String,
     #[serde(default)]
     window_x: Option<i32>,
     #[serde(default)]
@@ -64,6 +67,7 @@ impl Default for AppSettings {
             locale: default_locale(),
             data_dir: String::new(),
             hotkeys: HotkeySettings::default(),
+            search_engine: default_search_engine(),
             window_x: None,
             window_y: None,
             window_width: None,
@@ -237,6 +241,7 @@ fn normalize_settings<R: Runtime>(
         } else {
             hotkeys
         },
+        search_engine: normalize_search_engine(settings.search_engine),
         window_x: settings.window_x,
         window_y: settings.window_y,
         window_width: settings.window_width,
@@ -252,8 +257,19 @@ fn normalize_locale(locale: String) -> String {
     }
 }
 
+fn normalize_search_engine(search_engine: String) -> String {
+    match search_engine.as_str() {
+        "google" | "bing" | "baidu" => search_engine,
+        _ => DEFAULT_SEARCH_ENGINE.to_string(),
+    }
+}
+
 fn default_locale() -> String {
     DEFAULT_LOCALE.to_string()
+}
+
+fn default_search_engine() -> String {
+    DEFAULT_SEARCH_ENGINE.to_string()
 }
 
 fn settings_with_initial_locale() -> AppSettings {

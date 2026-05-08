@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { ArrowBigUp, Plus, Search, Settings, X } from "lucide-vue-next";
 import { useI18n } from "../../i18n";
 import { noteKindDefinitions } from "../../notes/noteKinds";
+import { useAppSettings } from "../../settings/useAppSettings";
+import type { SearchEngine } from "../../settings/appSettingsRepository";
 import NoteCard from "./NoteCard.vue";
 import NoteContextMenu from "./NoteContextMenu.vue";
 import type { Note } from "./noteTypes";
@@ -30,6 +33,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const { searchEngine } = useAppSettings();
 const contextMenu = ref<{
   note: Note;
   x: number;
@@ -100,6 +104,33 @@ function handleGlobalKeyDown(event: KeyboardEvent) {
 
 function clearSearch() {
   emit("updateSearchQuery", "");
+}
+
+async function searchNoteTitle(title: string) {
+  const keyword = title.trim();
+  if (!keyword) {
+    return;
+  }
+
+  try {
+    await openUrl(buildSearchUrl(searchEngine.value, keyword));
+  } catch (error) {
+    console.error("Failed to open search URL", error);
+  }
+}
+
+function buildSearchUrl(engine: SearchEngine, keyword: string) {
+  const query = encodeURIComponent(keyword);
+
+  switch (engine) {
+    case "baidu":
+      return `https://www.baidu.com/s?wd=${query}`;
+    case "bing":
+      return `https://www.bing.com/search?q=${query}`;
+    case "google":
+    default:
+      return `https://www.google.com/search?q=${query}`;
+  }
 }
 
 async function refreshNoteKindCounts() {
@@ -223,6 +254,7 @@ watch(
               :highlight-terms="highlightTerms"
               :note="note"
               @open-context-menu="openContextMenu"
+              @search-title="searchNoteTitle"
             />
           </div>
         </div>

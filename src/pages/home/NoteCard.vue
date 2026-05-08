@@ -15,8 +15,9 @@ const props = withDefaults(
   },
 );
 
-defineEmits<{
+const emit = defineEmits<{
   openContextMenu: [event: MouseEvent, note: Note];
+  searchTitle: [title: string];
 }>();
 
 const { formatRelativeTime, translateNoteKind } = useI18n();
@@ -30,6 +31,19 @@ function paragraphParts(value: string) {
 function splitParagraphs(value: string) {
   return value.split(/\r?\n/);
 }
+
+function handleClick(event: MouseEvent) {
+  if (event.button !== 0 || !event.ctrlKey) {
+    return;
+  }
+
+  const title = props.note.title?.trim() ?? "";
+  if (!title) {
+    return;
+  }
+
+  emit("searchTitle", title);
+}
 </script>
 
 <template>
@@ -41,6 +55,7 @@ function splitParagraphs(value: string) {
         'note-card--untitled': !note.title,
       },
     ]"
+    @click="handleClick"
     @contextmenu.prevent="contextMenuEnabled && $emit('openContextMenu', $event, note)"
   >
     <div class="note-accent" aria-hidden="true"></div>

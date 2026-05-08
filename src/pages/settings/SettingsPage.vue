@@ -9,6 +9,7 @@ import {
   revealDataDir,
   setHotkeysEnabled,
   type HotkeyAction,
+  type SearchEngine,
 } from "../../settings/appSettingsRepository";
 import { useAppSettings } from "../../settings/useAppSettings";
 import { formatHotkeyParts, normalizeHotkeyFromKeyboardEvent } from "../../settings/hotkeys";
@@ -29,6 +30,7 @@ const tabLabelKeys: Record<SettingsTab, MessageKey> = {
 const activeTab = ref<SettingsTab>("general");
 const appVersion = ref("");
 const isLanguageSelectOpen = ref(false);
+const isSearchEngineSelectOpen = ref(false);
 const isMigratingDataDir = ref(false);
 const capturingHotkey = ref<HotkeyAction | null>(null);
 const hotkeyDraft = ref("");
@@ -47,7 +49,7 @@ const shortcutMessages = reactive<Record<HotkeyAction, string>>({
   title: "",
 });
 const { languageOptions, locale, selectedLanguageLabel, setLocale, t, translateError } = useI18n();
-const { dataDir, hotkeys, replaceSettings, resetHotkey, setHotkey } = useAppSettings();
+const { dataDir, hotkeys, replaceSettings, resetHotkey, searchEngine, setHotkey, setSearchEngine } = useAppSettings();
 const { checkAndInstallUpdate, isBusy: isUpdateBusy, message: updateMessage } = useAppUpdater();
 
 const emit = defineEmits<{
@@ -59,6 +61,14 @@ const emit = defineEmits<{
 const activeTabLabel = computed(() => t(tabLabelKeys[activeTab.value]));
 const hasTags = computed(() => tags.value.length > 0);
 const tagTotalText = computed(() => t("settings.tags.total", { count: tags.value.length }));
+const searchEngineOptions = computed(() => [
+  { label: "Google", value: "google" as const },
+  { label: "Bing", value: "bing" as const },
+  { label: "Baidu", value: "baidu" as const },
+]);
+const selectedSearchEngineLabel = computed(
+  () => searchEngineOptions.value.find((option) => option.value === searchEngine.value)?.label ?? "Google",
+);
 const shortcutItems = computed(() => [
   {
     action: "title" as const,
@@ -89,6 +99,25 @@ const shortcutItems = computed(() => [
 function selectLanguage(value: Locale) {
   void setLocale(value);
   isLanguageSelectOpen.value = false;
+}
+
+function selectSearchEngine(value: SearchEngine) {
+  void setSearchEngine(value);
+  isSearchEngineSelectOpen.value = false;
+}
+
+function toggleLanguageSelect() {
+  isLanguageSelectOpen.value = !isLanguageSelectOpen.value;
+  if (isLanguageSelectOpen.value) {
+    isSearchEngineSelectOpen.value = false;
+  }
+}
+
+function toggleSearchEngineSelect() {
+  isSearchEngineSelectOpen.value = !isSearchEngineSelectOpen.value;
+  if (isSearchEngineSelectOpen.value) {
+    isLanguageSelectOpen.value = false;
+  }
 }
 
 async function chooseAndMigrateDataDir() {
@@ -290,6 +319,11 @@ function handleSettingsKeydown(event: KeyboardEvent) {
     return;
   }
 
+  if (isSearchEngineSelectOpen.value) {
+    isSearchEngineSelectOpen.value = false;
+    return;
+  }
+
   if (deleteTarget.value) {
     cancelDeleteTag();
     return;
@@ -372,7 +406,7 @@ watch(activeTab, (tab) => {
               <span class="setting-title">{{ t("settings.general.language") }}</span>
               <span class="setting-description">{{ t("settings.general.languageDescription") }}</span>
               <span class="select-field">
-                <button type="button" class="select-trigger" @click="isLanguageSelectOpen = !isLanguageSelectOpen">
+                <button type="button" class="select-trigger" @click="toggleLanguageSelect">
                   {{ selectedLanguageLabel }}
                   <ChevronDown aria-hidden="true" />
                 </button>
@@ -385,6 +419,30 @@ watch(activeTab, (tab) => {
                     role="option"
                     :aria-selected="locale === option.value"
                     @click="selectLanguage(option.value)"
+                  >
+                    {{ option.label }}
+                  </button>
+                </span>
+              </span>
+            </label>
+
+            <label class="setting-row">
+              <span class="setting-title">{{ t("settings.general.searchEngine") }}</span>
+              <span class="setting-description">{{ t("settings.general.searchEngineDescription") }}</span>
+              <span class="select-field">
+                <button type="button" class="select-trigger" @click="toggleSearchEngineSelect">
+                  {{ selectedSearchEngineLabel }}
+                  <ChevronDown aria-hidden="true" />
+                </button>
+                <span v-if="isSearchEngineSelectOpen" class="select-menu" role="listbox">
+                  <button
+                    v-for="option in searchEngineOptions"
+                    :key="option.value"
+                    type="button"
+                    :class="{ 'is-selected': searchEngine === option.value }"
+                    role="option"
+                    :aria-selected="searchEngine === option.value"
+                    @click="selectSearchEngine(option.value)"
                   >
                     {{ option.label }}
                   </button>

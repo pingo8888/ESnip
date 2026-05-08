@@ -43,6 +43,8 @@ export const enUSMessages = {
   "settings.general.latest": "You are on the latest version.",
   "settings.general.language": "Language",
   "settings.general.languageDescription": "Interface language for menus, labels, and prompts.",
+  "settings.general.searchEngine": "Search engine",
+  "settings.general.searchEngineDescription": "Search engine used when Ctrl-clicking a card.",
   "settings.shortcuts.change": "Change...",
   "settings.shortcuts.captureHelp": "Press Alt+key, Ctrl+Alt+key, or Alt+Enter.",
   "settings.shortcuts.contentDescription": "Select text anywhere on your desktop and press this shortcut to create a sentence card with it as content.",

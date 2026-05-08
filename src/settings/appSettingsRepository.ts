@@ -5,11 +5,14 @@ export type AppSettings = {
   dataDir: string;
   hotkeys: HotkeySettings;
   locale: Locale;
+  searchEngine: SearchEngine;
 };
 
 export type HotkeyAction = "title" | "content" | "paragraph" | "save";
 
 export type HotkeySettings = Record<HotkeyAction, string>;
+
+export type SearchEngine = "google" | "bing" | "baidu";
 
 export async function getAppSettings(): Promise<AppSettings> {
   return invoke<AppSettings>("get_app_settings");

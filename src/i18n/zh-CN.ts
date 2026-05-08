@@ -41,6 +41,8 @@ export const zhCNMessages = {
   "settings.general.latest": "当前已是最新版本。",
   "settings.general.language": "语言",
   "settings.general.languageDescription": "菜单、标签和提示文本使用的界面语言。",
+  "settings.general.searchEngine": "搜索引擎",
+  "settings.general.searchEngineDescription": "Ctrl + 鼠标左键点击卡片时使用的搜索引擎。",
   "settings.shortcuts.change": "更改...",
   "settings.shortcuts.captureHelp": "按下 Alt+键、Ctrl+Alt+键 或 Alt+Enter。",
   "settings.shortcuts.contentDescription": "在桌面任意位置选中文字后按此快捷键，将选中文字作为内容新建句子卡片。",

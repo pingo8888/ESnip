@@ -6,6 +6,7 @@ import {
   type AppSettings,
   type HotkeyAction,
   type HotkeySettings,
+  type SearchEngine,
 } from "./appSettingsRepository";
 
 const DEFAULT_HOTKEYS: HotkeySettings = {
@@ -19,6 +20,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   dataDir: "",
   hotkeys: { ...DEFAULT_HOTKEYS },
   locale: detectBrowserLocale(),
+  searchEngine: "google",
 };
 
 const settings = ref<AppSettings>({ ...DEFAULT_SETTINGS });
@@ -45,15 +47,21 @@ export function useAppSettings() {
     dataDir: computed(() => settings.value.dataDir),
     hotkeys: computed(() => settings.value.hotkeys),
     locale: computed(() => settings.value.locale),
+    searchEngine: computed(() => settings.value.searchEngine),
     replaceSettings,
     resetHotkey,
     setHotkey,
     setLocale,
+    setSearchEngine,
   };
 }
 
 export async function setLocale(locale: Locale) {
   await saveSettings({ locale });
+}
+
+export async function setSearchEngine(searchEngine: SearchEngine) {
+  await saveSettings({ searchEngine });
 }
 
 export async function setHotkey(action: HotkeyAction, hotkey: string) {
@@ -95,6 +103,7 @@ function normalizeSettings(value: AppSettings): AppSettings {
     dataDir: value.dataDir ?? "",
     hotkeys: normalizeHotkeys(value.hotkeys),
     locale: value.locale === "en-US" ? "en-US" : "zh-CN",
+    searchEngine: normalizeSearchEngine(value.searchEngine),
   };
 }
 
@@ -114,4 +123,8 @@ function normalizeHotkeys(hotkeys: Partial<HotkeySettings> | undefined): HotkeyS
     save: hotkeys?.save || DEFAULT_HOTKEYS.save,
     title: hotkeys?.title || DEFAULT_HOTKEYS.title,
   };
+}
+
+function normalizeSearchEngine(searchEngine: SearchEngine | undefined): SearchEngine {
+  return searchEngine === "bing" || searchEngine === "baidu" ? searchEngine : "google";
 }
