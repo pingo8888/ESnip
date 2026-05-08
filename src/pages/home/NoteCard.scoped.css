@@ -138,8 +138,16 @@
 
 .note-excerpt p {
   margin: 0;
-  text-align: justify;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.note-excerpt-paragraph--justify {
+  text-align: justify;
+}
+
+.note-excerpt-paragraph--left {
+  text-align: left;
 }
 
 .note-excerpt p + p {
@@ -164,7 +172,6 @@
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 @keyframes card-in {

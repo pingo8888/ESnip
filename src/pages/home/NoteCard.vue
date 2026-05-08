@@ -34,6 +34,14 @@ function splitParagraphs(value: string) {
   return value.split(/\r?\n/);
 }
 
+function paragraphClass(value: string) {
+  return containsCjk(value) ? "note-excerpt-paragraph--justify" : "note-excerpt-paragraph--left";
+}
+
+function containsCjk(value: string) {
+  return /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(value);
+}
+
 function handleClick(event: MouseEvent) {
   if (event.button !== 0 || !event.ctrlKey) {
     return;
@@ -88,7 +96,11 @@ onUnmounted(() => {
       </template>
     </h3>
     <div v-if="note.excerpt" class="note-excerpt">
-      <p v-for="(paragraph, paragraphIndex) in splitParagraphs(note.excerpt)" :key="paragraphIndex">
+      <p
+        v-for="(paragraph, paragraphIndex) in splitParagraphs(note.excerpt)"
+        :key="paragraphIndex"
+        :class="paragraphClass(paragraph)"
+      >
         <template v-for="(part, partIndex) in paragraphParts(paragraph)" :key="partIndex">
           <mark v-if="part.highlighted" class="note-highlight">{{ part.text }}</mark>
           <template v-else>{{ part.text }}</template>
