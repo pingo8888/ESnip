@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onUnmounted, ref } from "vue";
 import { useI18n } from "../../i18n";
 import type { Note } from "./noteTypes";
 import { splitHighlightParts } from "./searchHighlight";
@@ -23,6 +23,8 @@ const emit = defineEmits<{
 const { formatRelativeTime, translateNoteKind } = useI18n();
 
 const titleParts = computed(() => splitHighlightParts(props.note.title ?? "", props.highlightTerms));
+const isSearchFeedbackVisible = ref(false);
+let searchFeedbackTimer: number | undefined;
 
 function paragraphParts(value: string) {
   return splitHighlightParts(value, props.highlightTerms);
@@ -42,8 +44,21 @@ function handleClick(event: MouseEvent) {
     return;
   }
 
+  showSearchFeedback();
   emit("searchTitle", title);
 }
+
+function showSearchFeedback() {
+  isSearchFeedbackVisible.value = true;
+  window.clearTimeout(searchFeedbackTimer);
+  searchFeedbackTimer = window.setTimeout(() => {
+    isSearchFeedbackVisible.value = false;
+  }, 260);
+}
+
+onUnmounted(() => {
+  window.clearTimeout(searchFeedbackTimer);
+});
 </script>
 
 <template>
@@ -53,6 +68,7 @@ function handleClick(event: MouseEvent) {
       `note-card--${note.tone}`,
       {
         'note-card--untitled': !note.title,
+        'note-card--search-feedback': isSearchFeedbackVisible,
       },
     ]"
     @click="handleClick"

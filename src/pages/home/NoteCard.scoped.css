@@ -44,6 +44,14 @@
   transform: translateY(-2px);
 }
 
+.note-card.note-card--search-feedback,
+.note-card.note-card--search-feedback:hover {
+  border-color: var(--color-sage);
+  box-shadow:
+    0 0 0 1px rgba(117, 128, 111, 0.34),
+    0 18px 44px var(--shadow-soft-color);
+}
+
 .note-accent {
   position: absolute;
   top: 0;
