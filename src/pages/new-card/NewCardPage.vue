@@ -6,6 +6,7 @@ import { isHotkeyEvent } from "../../settings/hotkeys";
 import { useAppSettings } from "../../settings/useAppSettings";
 import { noteKindDefinitions } from "../../notes/noteKinds";
 import { computeColumnLayout } from "../home/cardColumns";
+import { measuredHomeCardSize } from "../home/homeCardMetrics";
 import NoteCard from "../home/NoteCard.vue";
 import type { Note, NoteInput, NoteKind, NoteTone, NoteUpdateInput } from "../home/noteTypes";
 import TagSuggestInput from "../shared/TagSuggestInput.vue";
@@ -44,13 +45,17 @@ const tagSuggestionsOpen = ref(false);
 const { t, translateNoteKind } = useI18n();
 const { hotkeys } = useAppSettings();
 
-const windowWidth = ref(window.innerWidth);
+const windowWidth = ref(document.documentElement.clientWidth);
 
 function onWindowResize() {
-  windowWidth.value = window.innerWidth;
+  windowWidth.value = document.documentElement.clientWidth;
 }
 
 const previewCardWidth = computed(() => {
+  if (measuredHomeCardSize.value?.width) {
+    return `${measuredHomeCardSize.value.width}px`;
+  }
+
   const scrollPadding = 54; // .notes-scroll horizontal padding: 24px + 30px
   const containerWidth = windowWidth.value - scrollPadding;
 

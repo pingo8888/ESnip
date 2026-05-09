@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ArrowBigUp, Plus, Search, Settings, X } from "lucide-vue-next";
 import { useI18n } from "../../i18n";
 import { noteKindDefinitions } from "../../notes/noteKinds";
 import { useAppSettings } from "../../settings/useAppSettings";
 import type { SearchEngine } from "../../settings/appSettingsRepository";
+import { updateMeasuredHomeCardSize } from "./homeCardMetrics";
 import NoteCard from "./NoteCard.vue";
 import NoteContextMenu from "./NoteContextMenu.vue";
 import type { Note } from "./noteTypes";
@@ -41,6 +42,7 @@ const contextMenu = ref<{
   y: number;
 } | null>(null);
 const hasRequestedNearBottomLoad = ref(false);
+const notesScrollEl = ref<HTMLElement | null>(null);
 const noteKindCounts = ref<Record<string, number>>({});
 const sectionTitle = computed(() =>
   props.searchQuery.trim()
@@ -164,10 +166,31 @@ function handleNotesScroll(event: Event) {
   }
 }
 
+function setNotesScrollRef(el: HTMLElement | null) {
+  notesScrollEl.value = el;
+  emit("notesScrollReady", el);
+  void nextTick(measureHomeCardSize);
+}
+
+function measureHomeCardSize() {
+  const card = notesScrollEl.value?.querySelector<HTMLElement>(".note-card");
+
+  if (!card) {
+    return;
+  }
+
+  const rect = card.getBoundingClientRect();
+  updateMeasuredHomeCardSize({
+    height: rect.height,
+    width: rect.width,
+  });
+}
+
 onMounted(() => {
   window.addEventListener("pointerdown", handleGlobalPointerDown);
   window.addEventListener("keydown", handleGlobalKeyDown);
   void refreshNoteKindCounts();
+  void nextTick(measureHomeCardSize);
 });
 
 onUnmounted(() => {
@@ -180,6 +203,14 @@ watch(
   () => {
     void refreshNoteKindCounts();
   },
+);
+
+watch(
+  () => [props.columnWidth, props.masonryColumns, props.searchQuery] as const,
+  () => {
+    void nextTick(measureHomeCardSize);
+  },
+  { flush: "post" },
 );
 </script>
 
@@ -241,7 +272,7 @@ watch(
       <h2 id="recent-heading">{{ sectionTitle }}</h2>
 
       <div
-        :ref="(el) => $emit('notesScrollReady', el as HTMLElement | null)"
+        :ref="(el) => setNotesScrollRef(el as HTMLElement | null)"
         class="notes-scroll thin-scrollbar"
         tabindex="-1"
         @scroll="handleNotesScroll"
