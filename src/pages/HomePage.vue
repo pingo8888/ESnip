@@ -42,7 +42,8 @@ let resizeObserver: ResizeObserver | undefined;
 let unlistenQuickCapture: UnlistenFn | undefined;
 let unlistenQuickCaptureContent: UnlistenFn | undefined;
 
-const columnCount = computed(() => computeColumnLayout(notesScrollWidth.value).columnCount);
+const columnLayout = computed(() => computeColumnLayout(notesScrollWidth.value));
+const columnCount = computed(() => columnLayout.value.columnCount);
 
 const masonryColumns = computed(() => {
   const columns = Array.from({ length: columnCount.value }, () => [] as Note[]);
@@ -88,7 +89,16 @@ function setNotesScrollElement(el: HTMLElement | null) {
 }
 
 function updateNotesScrollWidth() {
-  notesScrollWidth.value = notesScrollEl.value?.clientWidth ?? 0;
+  const el = notesScrollEl.value;
+
+  if (!el) {
+    notesScrollWidth.value = 0;
+    return;
+  }
+
+  const styles = window.getComputedStyle(el);
+  const horizontalPadding = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
+  notesScrollWidth.value = Math.max(0, el.clientWidth - horizontalPadding);
 }
 
 function showNewCardPage(initialTitle = "", initialContent = "", initialKind: NoteKind = "word") {
@@ -280,6 +290,7 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
     <HomePageView
       v-show="activePage === 'home'"
       :masonry-columns="masonryColumns"
+      :column-width="columnLayout.cardWidth"
       :result-count="totalCount"
       :search-query="searchQuery"
       :update-available="hasUpdate"

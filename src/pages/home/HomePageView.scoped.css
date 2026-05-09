@@ -219,7 +219,7 @@ kbd {
 .notes-column {
   display: flex;
   min-width: 0;
-  flex: 1;
+  flex: 0 0 auto;
   flex-direction: column;
   gap: 14px;
 }
@@ -259,6 +259,10 @@ kbd {
 
   .notes-columns {
     gap: 0;
+  }
+
+  .notes-column {
+    width: 100% !important;
   }
 
 }

@@ -14,6 +14,7 @@ import { listNoteKindCounts, type SuggestionItem } from "./notesRepository";
 import { parseHighlightTerms } from "./searchHighlight";
 
 const props = defineProps<{
+  columnWidth: number;
   masonryColumns: Note[][];
   resultCount: number;
   searchQuery: string;
@@ -246,7 +247,12 @@ watch(
         @scroll="handleNotesScroll"
       >
         <div class="notes-columns">
-          <div v-for="(column, columnIndex) in masonryColumns" :key="columnIndex" class="notes-column">
+          <div
+            v-for="(column, columnIndex) in masonryColumns"
+            :key="columnIndex"
+            class="notes-column"
+            :style="{ width: `${columnWidth}px` }"
+          >
             <NoteCard
               v-for="note in column"
               :key="note.id"
