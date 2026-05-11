@@ -6,8 +6,10 @@ use crate::store::notes::{
 };
 
 pub(super) fn init_schema(conn: &Connection) -> Result<(), String> {
-    migrate_note_kind_values(conn)?;
-    migrate_fts_table(conn)?;
+    let note_kind_migration_rebuilt_notes = migrate_note_kind_values(conn)?;
+    let fts_migration_dropped_table = migrate_fts_table(conn)?;
+    let notes_table_exists = table_exists(conn, "notes")?;
+    let fts_table_exists = table_exists(conn, "notes_fts")?;
     let should_rebuild_note_tags = !table_exists(conn, "note_tags")?;
 
     conn.execute_batch(
@@ -73,7 +75,11 @@ pub(super) fn init_schema(conn: &Connection) -> Result<(), String> {
     )
     .map_err(|error| error.to_string())?;
 
-    rebuild_fts_index(conn)?;
+    if notes_table_exists
+        && (note_kind_migration_rebuilt_notes || fts_migration_dropped_table || !fts_table_exists)
+    {
+        rebuild_fts_index(conn)?;
+    }
     if should_rebuild_note_tags {
         rebuild_note_tags_index(conn)?;
     }

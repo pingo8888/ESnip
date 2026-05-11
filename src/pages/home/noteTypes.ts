@@ -28,7 +28,9 @@ export type NoteUpdateInput = NoteInput & {
   id: string;
 };
 
+// Search cursors are only valid for loading later pages of the same query.
 export type NotesCursor = {
   updatedAt: number;
   id: string;
+  rank?: number;
 };

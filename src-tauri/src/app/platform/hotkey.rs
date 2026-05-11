@@ -72,7 +72,7 @@ fn capture_selected_text_from_system() -> Option<String> {
 
     let mut captured = String::new();
     let mut last_sequence = marker_sequence;
-    for _ in 0..16 {
+    for _ in 0..32 {
         thread::sleep(Duration::from_millis(15));
         let sequence = unsafe { GetClipboardSequenceNumber() };
         if sequence == last_sequence {
@@ -88,7 +88,7 @@ fn capture_selected_text_from_system() -> Option<String> {
     }
 
     if captured.is_empty() {
-        for _ in 0..8 {
+        for _ in 0..12 {
             thread::sleep(Duration::from_millis(40));
             if let Ok(text) = clipboard.get_text() {
                 if text != marker {
@@ -218,7 +218,7 @@ where
                 }
             }
 
-            thread::sleep(Duration::from_millis(20));
+            thread::sleep(Duration::from_millis(100));
         }
 
         unregister_hotkeys(&mut registered);

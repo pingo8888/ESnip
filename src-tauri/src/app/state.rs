@@ -5,7 +5,7 @@ use std::sync::{
 
 use rusqlite::Connection;
 
-use crate::store::settings::HotkeySettings;
+use crate::store::settings::{AppSettings, HotkeySettings};
 
 pub(crate) struct DbState {
     pub(crate) conn: Mutex<Connection>,
@@ -18,6 +18,9 @@ impl DbState {
         }
     }
 }
+
+#[derive(Clone, Default)]
+pub(crate) struct SettingsState(pub(crate) Arc<Mutex<Option<AppSettings>>>);
 
 #[derive(Clone, Default)]
 pub(crate) struct AppQuitState(pub(crate) Arc<AtomicBool>);

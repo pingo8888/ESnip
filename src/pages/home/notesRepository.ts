@@ -53,10 +53,12 @@ export async function listNotesPage(cursor: NotesCursor | null, limit = 80): Pro
   };
 }
 
-export async function searchNotes(query: string, limit = 80, offset = 0): Promise<NotesPage> {
+export async function searchNotes(query: string, limit = 80, cursor: NotesCursor | null = null): Promise<NotesPage> {
   const page = await invoke<BackendNotesPage>("search_notes", {
+    cursorId: cursor?.id ?? null,
+    cursorRank: cursor?.rank ?? null,
+    cursorUpdatedAt: cursor?.updatedAt ?? null,
     limit,
-    offset,
     query,
   });
 

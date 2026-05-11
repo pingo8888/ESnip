@@ -17,15 +17,17 @@ pub(crate) fn setup_app<R: tauri::Runtime>(
 where
     tauri::AppHandle<R>: Send + 'static,
 {
+    // Prime the settings cache before opening the database; init_connection
+    // reads the current data directory from settings.
+    let settings = get_app_settings(app.handle()).map_err(|error| {
+        Box::<dyn std::error::Error>::from(std::io::Error::new(std::io::ErrorKind::Other, error))
+    })?;
+
     let conn = init_connection(app.handle()).map_err(|error| {
         Box::<dyn std::error::Error>::from(std::io::Error::new(std::io::ErrorKind::Other, error))
     })?;
 
     app.manage(DbState::new(conn));
-
-    let settings = get_app_settings(app.handle()).map_err(|error| {
-        Box::<dyn std::error::Error>::from(std::io::Error::new(std::io::ErrorKind::Other, error))
-    })?;
     let hotkey_state = app.state::<HotkeyState>();
     let mut hotkey_guard = hotkey_state.0.lock().map_err(|_| {
         Box::<dyn std::error::Error>::from(std::io::Error::new(

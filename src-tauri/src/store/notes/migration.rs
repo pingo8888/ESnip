@@ -1,17 +1,18 @@
 use rusqlite::{Connection, OptionalExtension};
 
-pub(super) fn migrate_note_kind_values(conn: &Connection) -> Result<(), String> {
+pub(super) fn migrate_note_kind_values(conn: &Connection) -> Result<bool, String> {
     if !notes_table_exists(conn)? {
-        return Ok(());
+        return Ok(false);
     }
 
     if note_kind_check_uses_chinese(conn)? {
         rebuild_notes_table_with_english_kinds(conn)?;
+        return Ok(true);
     } else {
         normalize_existing_note_kind_values(conn)?;
     }
 
-    Ok(())
+    Ok(false)
 }
 
 fn notes_table_exists(conn: &Connection) -> Result<bool, String> {
@@ -106,7 +107,7 @@ fn normalize_existing_note_kind_values(conn: &Connection) -> Result<(), String> 
     Ok(())
 }
 
-pub(super) fn migrate_fts_table(conn: &Connection) -> Result<(), String> {
+pub(super) fn migrate_fts_table(conn: &Connection) -> Result<bool, String> {
     let current_sql = conn
         .query_row(
             "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'notes_fts'",
@@ -129,7 +130,8 @@ pub(super) fn migrate_fts_table(conn: &Connection) -> Result<(), String> {
             ",
         )
         .map_err(|error| error.to_string())?;
+        return Ok(true);
     }
 
-    Ok(())
+    Ok(false)
 }

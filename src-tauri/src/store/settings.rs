@@ -6,6 +6,8 @@ use std::{
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager, Runtime};
 
+use crate::app::state::SettingsState;
+
 const SETTINGS_FILE_NAME: &str = "settings.json";
 const DEFAULT_LOCALE: &str = "zh-CN";
 const DEFAULT_SEARCH_ENGINE: &str = "google";
@@ -95,9 +97,84 @@ impl AppSettings {
     pub(crate) fn hotkeys(&self) -> &HotkeySettings {
         &self.hotkeys
     }
+
+    fn apply_user_settings(&mut self, settings: &AppSettings) {
+        // The settings page owns user-editable fields only; window state is
+        // persisted separately and must survive frontend settings saves.
+        self.locale = settings.locale.clone();
+        self.data_dir = settings.data_dir.clone();
+        self.hotkeys = settings.hotkeys.clone();
+        self.search_engine = settings.search_engine.clone();
+    }
 }
 
 pub(crate) fn get_app_settings<R: Runtime>(app: &AppHandle<R>) -> Result<AppSettings, String> {
+    let state = app.state::<SettingsState>();
+    let mut guard = state.0.lock().map_err(|error| error.to_string())?;
+
+    if let Some(settings) = guard.as_ref() {
+        return Ok(settings.clone());
+    }
+
+    let settings = read_settings_from_disk(app)?;
+    *guard = Some(settings.clone());
+
+    Ok(settings)
+}
+
+pub(crate) fn update_app_settings<R: Runtime>(
+    app: &AppHandle<R>,
+    settings: AppSettings,
+) -> Result<AppSettings, String> {
+    mutate_settings_with_lock(app, true, |current| {
+        current.apply_user_settings(&settings);
+        Ok(())
+    })
+}
+
+pub(crate) fn current_data_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, String> {
+    let settings = get_app_settings(app)?;
+
+    Ok(PathBuf::from(settings.data_dir))
+}
+
+pub(crate) fn update_data_dir<R: Runtime>(
+    app: &AppHandle<R>,
+    data_dir: &Path,
+) -> Result<AppSettings, String> {
+    mutate_settings_with_lock(app, true, |settings| {
+        settings.data_dir = normalize_data_dir(data_dir)?;
+        Ok(())
+    })
+}
+
+pub(crate) fn save_window_state<R: Runtime>(
+    app: &AppHandle<R>,
+    x: i32,
+    y: i32,
+    width: u32,
+    height: u32,
+) -> Result<(), String> {
+    mutate_settings_with_lock(app, false, |settings| {
+        if settings.window_x == Some(x)
+            && settings.window_y == Some(y)
+            && settings.window_width == Some(width)
+            && settings.window_height == Some(height)
+        {
+            return Ok(());
+        }
+
+        settings.window_x = Some(x);
+        settings.window_y = Some(y);
+        settings.window_width = Some(width);
+        settings.window_height = Some(height);
+        Ok(())
+    })?;
+
+    Ok(())
+}
+
+fn read_settings_from_disk<R: Runtime>(app: &AppHandle<R>) -> Result<AppSettings, String> {
     let settings_path = settings_file_path(app)?;
 
     if !settings_path.exists() {
@@ -113,12 +190,35 @@ pub(crate) fn get_app_settings<R: Runtime>(app: &AppHandle<R>) -> Result<AppSett
     normalize_settings(app, settings, false)
 }
 
-pub(crate) fn update_app_settings<R: Runtime>(
+fn mutate_settings_with_lock<R, F>(
     app: &AppHandle<R>,
-    settings: AppSettings,
-) -> Result<AppSettings, String> {
+    reject_duplicate_hotkeys: bool,
+    mut mutate: F,
+) -> Result<AppSettings, String>
+where
+    R: Runtime,
+    F: FnMut(&mut AppSettings) -> Result<(), String>,
+{
+    let state = app.state::<SettingsState>();
+    let mut guard = state.0.lock().map_err(|error| error.to_string())?;
+    let mut settings = match guard.as_ref() {
+        Some(settings) => settings.clone(),
+        None => read_settings_from_disk(app)?,
+    };
+
+    mutate(&mut settings)?;
+    let settings = normalize_settings(app, settings, reject_duplicate_hotkeys)?;
+    write_settings_to_disk(app, &settings)?;
+    *guard = Some(settings.clone());
+
+    Ok(settings)
+}
+
+fn write_settings_to_disk<R: Runtime>(
+    app: &AppHandle<R>,
+    settings: &AppSettings,
+) -> Result<(), String> {
     let settings_path = settings_file_path(app)?;
-    let settings = normalize_settings(app, settings, true)?;
 
     if let Some(parent) = settings_path.parent() {
         fs::create_dir_all(parent).map_err(|error| error.to_string())?;
@@ -126,48 +226,6 @@ pub(crate) fn update_app_settings<R: Runtime>(
 
     let contents = serde_json::to_string_pretty(&settings).map_err(|error| error.to_string())?;
     fs::write(settings_path, contents).map_err(|error| error.to_string())?;
-
-    Ok(settings)
-}
-
-pub(crate) fn current_data_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, String> {
-    let settings = get_app_settings(app)?;
-
-    Ok(PathBuf::from(settings.data_dir))
-}
-
-pub(crate) fn update_data_dir<R: Runtime>(
-    app: &AppHandle<R>,
-    data_dir: &Path,
-) -> Result<AppSettings, String> {
-    let mut settings = get_app_settings(app)?;
-    settings.data_dir = normalize_data_dir(data_dir)?;
-
-    update_app_settings(app, settings)
-}
-
-pub(crate) fn save_window_state<R: Runtime>(
-    app: &AppHandle<R>,
-    x: i32,
-    y: i32,
-    width: u32,
-    height: u32,
-) -> Result<(), String> {
-    let mut settings = get_app_settings(app)?;
-
-    if settings.window_x == Some(x)
-        && settings.window_y == Some(y)
-        && settings.window_width == Some(width)
-        && settings.window_height == Some(height)
-    {
-        return Ok(());
-    }
-
-    settings.window_x = Some(x);
-    settings.window_y = Some(y);
-    settings.window_width = Some(width);
-    settings.window_height = Some(height);
-    update_app_settings(app, settings)?;
     Ok(())
 }
 

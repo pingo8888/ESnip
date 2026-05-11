@@ -135,6 +135,10 @@ pub(crate) fn delete_tag(conn: &Connection, tag: String) -> Result<Vec<TagSugges
         .map_err(|error| error.to_string())?;
     let affected_notes = collect_notes_with_tag(&tx, &tag)?;
 
+    if affected_notes.is_empty() {
+        return Err("errors.tagNotFound".to_string());
+    }
+
     for (note_id, tags_json) in affected_notes {
         let tags = serde_json::from_str::<Vec<String>>(&tags_json).unwrap_or_default();
         let next_tags = delete_tag_values(&tags, &tag);

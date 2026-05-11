@@ -23,7 +23,15 @@ pub(crate) fn open_connection_at_dir(data_dir: &Path) -> Result<Connection, Stri
 
     conn.pragma_update(None, "journal_mode", "WAL")
         .map_err(|error| error.to_string())?;
+    conn.pragma_update(None, "synchronous", "NORMAL")
+        .map_err(|error| error.to_string())?;
     conn.pragma_update(None, "foreign_keys", "ON")
+        .map_err(|error| error.to_string())?;
+    conn.pragma_update(None, "busy_timeout", 5_000)
+        .map_err(|error| error.to_string())?;
+    conn.pragma_update(None, "temp_store", "MEMORY")
+        .map_err(|error| error.to_string())?;
+    conn.pragma_update(None, "mmap_size", 268_435_456_i64)
         .map_err(|error| error.to_string())?;
     init_schema(&conn)?;
 

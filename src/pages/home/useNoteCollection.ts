@@ -54,9 +54,11 @@ export function useNoteCollection() {
       return;
     }
 
+    const requestId = requestSerial;
     const trimmedQuery = searchQuery.value.trim();
+    const shouldUseSearch = canRunSearch(trimmedQuery);
     if (trimmedQuery) {
-      if (notes.value.length >= totalCount.value) {
+      if (!shouldUseSearch || !nextCursor.value || notes.value.length >= totalCount.value) {
         return;
       }
     } else if (!nextCursor.value) {
@@ -67,17 +69,29 @@ export function useNoteCollection() {
     error.value = null;
 
     try {
-      const page = trimmedQuery
-        ? await searchNotes(trimmedQuery, 80, notes.value.length)
+      const page = shouldUseSearch
+        ? await searchNotes(trimmedQuery, 80, nextCursor.value)
         : await listNotesPage(nextCursor.value);
 
+      if (requestId !== requestSerial) {
+        return;
+      }
+
       notes.value = [...notes.value, ...page.notes];
-      nextCursor.value = trimmedQuery ? null : page.nextCursor;
-      totalCount.value = page.totalCount;
+      nextCursor.value = page.nextCursor;
+      if (page.totalCount >= 0) {
+        totalCount.value = page.totalCount;
+      }
     } catch (caught) {
+      if (requestId !== requestSerial) {
+        return;
+      }
+
       error.value = caught instanceof Error ? caught.message : String(caught);
     } finally {
-      isLoading.value = false;
+      if (requestId === requestSerial) {
+        isLoading.value = false;
+      }
     }
   }
 
@@ -89,7 +103,7 @@ export function useNoteCollection() {
       return note;
     }
 
-    notes.value = [note, ...notes.value];
+    notes.value = [note, ...notes.value.filter((item) => item.id !== note.id)];
     totalCount.value += 1;
     return note;
   }
@@ -122,6 +136,7 @@ export function useNoteCollection() {
 
   function setSearchQuery(query: string) {
     searchQuery.value = query;
+    requestSerial += 1;
 
     if (searchTimer) {
       clearTimeout(searchTimer);
@@ -140,6 +155,13 @@ export function useNoteCollection() {
     error.value = null;
 
     try {
+      if (trimmedQuery && !canRunSearch(trimmedQuery)) {
+        notes.value = [];
+        nextCursor.value = null;
+        totalCount.value = 0;
+        return;
+      }
+
       const page = trimmedQuery ? await searchNotes(trimmedQuery) : await listNotesPage(null);
 
       if (requestId !== requestSerial) {
@@ -147,7 +169,7 @@ export function useNoteCollection() {
       }
 
       notes.value = page.notes;
-      nextCursor.value = trimmedQuery ? null : page.nextCursor;
+      nextCursor.value = page.nextCursor;
       totalCount.value = page.totalCount;
     } catch (caught) {
       if (requestId !== requestSerial) {
@@ -177,4 +199,53 @@ export function useNoteCollection() {
     totalCount,
     updateNote,
   };
+}
+
+function canRunSearch(query: string) {
+  const parsed = parseSearchQuery(query);
+
+  if (parsed.textTerms.length === 0) {
+    return parsed.hasFilters;
+  }
+
+  return parsed.hasFilters || parsed.textTerms.every(isSearchableTextTerm);
+}
+
+function parseSearchQuery(query: string) {
+  const terms = query.split(/\s+/).filter(Boolean);
+  const textTerms: string[] = [];
+  let hasFilters = false;
+
+  for (const term of terms) {
+    if (term.startsWith("#") || term.startsWith("!#") || term.startsWith("@") || term.startsWith("!@")) {
+      hasFilters = true;
+      continue;
+    }
+
+    textTerms.push(term);
+  }
+
+  return {
+    hasFilters,
+    textTerms,
+  };
+}
+
+function isSearchableTextTerm(value: string) {
+  return [...value].length >= 3 || countCjkCharacters(value) >= 2;
+}
+
+function countCjkCharacters(value: string) {
+  return [...value].filter(isCjkCharacter).length;
+}
+
+function isCjkCharacter(char: string) {
+  const codePoint = char.codePointAt(0) ?? 0;
+
+  return (
+    (codePoint >= 0x3400 && codePoint <= 0x9fff) ||
+    (codePoint >= 0xf900 && codePoint <= 0xfaff) ||
+    (codePoint >= 0x3040 && codePoint <= 0x30ff) ||
+    (codePoint >= 0xac00 && codePoint <= 0xd7af)
+  );
 }

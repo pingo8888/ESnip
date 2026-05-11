@@ -17,6 +17,7 @@ import { parseHighlightTerms } from "./searchHighlight";
 const props = defineProps<{
   columnWidth: number;
   masonryColumns: Note[][];
+  noteKindCountsVersion: number;
   resultCount: number;
   searchQuery: string;
   updateAvailable: boolean;
@@ -44,6 +45,7 @@ const contextMenu = ref<{
 const hasRequestedNearBottomLoad = ref(false);
 const notesScrollEl = ref<HTMLElement | null>(null);
 const noteKindCounts = ref<Record<string, number>>({});
+const visibleNoteCount = computed(() => props.masonryColumns.reduce((total, column) => total + column.length, 0));
 const sectionTitle = computed(() =>
   props.searchQuery.trim()
     ? t("home.searchResults", { count: props.resultCount })
@@ -199,14 +201,14 @@ onUnmounted(() => {
 });
 
 watch(
-  () => props.resultCount,
+  () => props.noteKindCountsVersion,
   () => {
     void refreshNoteKindCounts();
   },
 );
 
 watch(
-  () => [props.columnWidth, props.masonryColumns, props.searchQuery] as const,
+  () => [props.columnWidth, visibleNoteCount.value] as const,
   () => {
     void nextTick(measureHomeCardSize);
   },

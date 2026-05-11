@@ -36,7 +36,15 @@ fn find_note_kind_value(kind: &str) -> Option<&'static str> {
                 || definition
                     .aliases
                     .iter()
-                    .any(|alias| alias.eq_ignore_ascii_case(cleaned_kind))
+                    .any(|alias| matches_kind_alias(alias, cleaned_kind))
         })
         .map(|definition| definition.value)
+}
+
+fn matches_kind_alias(alias: &str, kind: &str) -> bool {
+    if alias.is_ascii() && kind.is_ascii() {
+        alias.eq_ignore_ascii_case(kind)
+    } else {
+        alias == kind
+    }
 }

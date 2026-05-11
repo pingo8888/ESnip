@@ -11,7 +11,7 @@ use crate::app::{
         update_app_settings, update_note,
     },
     platform::{handle_window_event, show_main_window},
-    state::{AppQuitState, HotkeyEnabled, HotkeyShutdown, HotkeyState},
+    state::{AppQuitState, HotkeyEnabled, HotkeyShutdown, HotkeyState, SettingsState},
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -27,6 +27,7 @@ pub fn run() {
         .manage(HotkeyEnabled::default())
         .manage(HotkeyShutdown::default())
         .manage(HotkeyState::default())
+        .manage(SettingsState::default())
         .on_window_event(handle_window_event)
         .setup(setup_app)
         .invoke_handler(tauri::generate_handler![

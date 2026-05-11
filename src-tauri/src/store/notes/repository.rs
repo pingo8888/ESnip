@@ -20,9 +20,12 @@ pub(crate) fn list_notes_page(
 ) -> Result<NotesPage, String> {
     let page_size = limit.unwrap_or(80).clamp(1, 100);
 
-    let total_count = conn
-        .query_row("SELECT COUNT(*) FROM notes", [], |row| row.get::<_, i64>(0))
-        .map_err(|error| error.to_string())?;
+    let total_count = if cursor_updated_at.is_none() && cursor_id.is_none() {
+        conn.query_row("SELECT COUNT(*) FROM notes", [], |row| row.get::<_, i64>(0))
+            .map_err(|error| error.to_string())?
+    } else {
+        -1
+    };
 
     let notes = if let (Some(updated_at), Some(id)) = (cursor_updated_at, cursor_id) {
         let mut stmt = conn
@@ -62,6 +65,7 @@ pub(crate) fn list_notes_page(
     let next_cursor = notes.last().map(|note| NotesCursor {
         updated_at: note.updated_at,
         id: note.id.clone(),
+        rank: None,
     });
 
     Ok(NotesPage {
@@ -145,8 +149,6 @@ pub(crate) fn update_note(conn: &Connection, input: UpdateNoteInput) -> Result<N
 }
 
 pub(crate) fn delete_note(conn: &Connection, id: String) -> Result<(), String> {
-    conn.execute("DELETE FROM note_tags WHERE note_id = ?1", params![id])
-        .map_err(|error| error.to_string())?;
     conn.execute("DELETE FROM notes WHERE id = ?1", params![id])
         .map_err(|error| error.to_string())?;
     Ok(())

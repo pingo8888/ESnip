@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -38,26 +38,17 @@ const newCardDraftKey = ref(0);
 const notesScrollEl = ref<HTMLElement | null>(null);
 const notesScrollWidth = ref(0);
 const alwaysOnTop = ref(false);
+const noteKindCountsVersion = ref(0);
 let resizeObserver: ResizeObserver | undefined;
 let unlistenQuickCapture: UnlistenFn | undefined;
 let unlistenQuickCaptureContent: UnlistenFn | undefined;
+let lastColumnCount = 0;
+let noteColumnAssignments = new Map<string, number>();
 
 const columnLayout = computed(() => computeColumnLayout(notesScrollWidth.value));
 const columnCount = computed(() => columnLayout.value.columnCount);
 
-const masonryColumns = computed(() => {
-  const columns = Array.from({ length: columnCount.value }, () => [] as Note[]);
-  const columnHeights = Array.from({ length: columnCount.value }, () => 0);
-
-  for (const note of notes.value) {
-    const shortestColumnIndex = columnHeights.indexOf(Math.min(...columnHeights));
-
-    columns[shortestColumnIndex].push(note);
-    columnHeights[shortestColumnIndex] += estimateNoteHeight(note);
-  }
-
-  return columns;
-});
+const masonryColumns = ref<Note[][]>([]);
 
 function estimateNoteHeight(note: Note) {
   const titleLines = note.title ? Math.ceil(note.title.length / 14) : 0;
@@ -67,6 +58,34 @@ function estimateNoteHeight(note: Note) {
   const tagLines = Math.ceil(note.tags.join("").length / 12);
 
   return 78 + titleLines * 24 + excerptLines * 21 + tagLines * 18;
+}
+
+function updateMasonryColumns() {
+  const count = columnCount.value;
+  const columns = Array.from({ length: count }, () => [] as Note[]);
+  const columnHeights = Array.from({ length: count }, () => 0);
+
+  if (count !== lastColumnCount) {
+    noteColumnAssignments = new Map();
+    lastColumnCount = count;
+  }
+
+  const nextAssignments = new Map<string, number>();
+
+  for (const note of notes.value) {
+    let columnIndex = noteColumnAssignments.get(note.id);
+
+    if (columnIndex === undefined || columnIndex >= count) {
+      columnIndex = columnHeights.indexOf(Math.min(...columnHeights));
+    }
+
+    columns[columnIndex].push(note);
+    columnHeights[columnIndex] += estimateNoteHeight(note);
+    nextAssignments.set(note.id, columnIndex);
+  }
+
+  noteColumnAssignments = nextAssignments;
+  masonryColumns.value = columns;
 }
 
 function setNotesScrollElement(el: HTMLElement | null) {
@@ -162,6 +181,7 @@ function handleQuickCaptureContent(payload: QuickCaptureContentPayload) {
 
 async function saveNewNote(note: NoteInput) {
   await addNote(note);
+  noteKindCountsVersion.value += 1;
   activePage.value = "home";
 
   void nextTick(updateNotesScrollWidth);
@@ -172,7 +192,11 @@ async function saveEditedNote(note: NoteInput | NoteUpdateInput) {
     return;
   }
 
+  const previousKind = editingNote.value.kind;
   await updateNote(note);
+  if (previousKind !== note.kind) {
+    noteKindCountsVersion.value += 1;
+  }
   editingNote.value = null;
   activePage.value = "home";
 
@@ -193,6 +217,7 @@ async function confirmDeleteNote() {
   }
 
   await deleteNote(deletingNote.value.id);
+  noteKindCountsVersion.value += 1;
   deletingNote.value = null;
 
   void nextTick(updateNotesScrollWidth);
@@ -200,6 +225,7 @@ async function confirmDeleteNote() {
 
 async function handleDataDirChanged() {
   await loadInitialNotes();
+  noteKindCountsVersion.value += 1;
   void nextTick(updateNotesScrollWidth);
 }
 
@@ -230,6 +256,8 @@ onUnmounted(() => {
   unlistenQuickCapture?.();
   unlistenQuickCaptureContent?.();
 });
+
+watch([notes, columnCount], updateMasonryColumns, { immediate: true });
 
 async function minimizeWindow() {
   await getCurrentWindow().minimize();
@@ -290,6 +318,7 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
     <HomePageView
       v-show="activePage === 'home'"
       :masonry-columns="masonryColumns"
+      :note-kind-counts-version="noteKindCountsVersion"
       :column-width="columnLayout.cardWidth"
       :result-count="totalCount"
       :search-query="searchQuery"
