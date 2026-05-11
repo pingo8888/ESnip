@@ -12,11 +12,11 @@ frontend.
 
 Use SQLite as the local source of truth.
 
-Recommended tables:
+Current tables:
 
 - `notes`: canonical note/card records.
 - `notes_fts`: FTS5 virtual table indexing searchable text.
-- Optional supporting tables later: `tags`, `note_tags`, `sources`.
+- `note_tags`: normalized tag index used for filtering and tag suggestions.
 
 The main note table should store metadata needed for list rendering:
 
@@ -27,32 +27,60 @@ The main note table should store metadata needed for list rendering:
 - `created_at`
 - `updated_at`
 - `source`
+- `tags_json`
+- `tone`
 
 Use normal indexes for common list filters and sorting:
 
-- `created_at DESC`
-- `updated_at DESC`
-- `kind`
+- `(created_at DESC, id DESC)` on `notes`
+- `(updated_at DESC, id DESC)` on `notes`
+- `kind` on `notes`
+- `title COLLATE NOCASE` on `notes`
+- `tag COLLATE NOCASE` on `note_tags`
+- `note_id` on `note_tags`
 
 Use FTS5 for full-text search over `title` and `content`.
 
+### Tag Storage
+
+Tags are intentionally stored in two forms:
+
+- `notes.tags_json`: display source of truth. It preserves user-facing order and
+  casing and is loaded with the note row for frontend rendering.
+- `note_tags`: normalized index. It supports efficient `EXISTS` filters,
+  exclusion filters, and tag suggestion counts.
+
+This is a deliberate denormalized design: `tags_json` is not redundant while the
+UI needs ordered display tags, and `note_tags` is required for scalable tag
+queries.
+
 ## Query Strategy
 
-All list and search APIs must be paginated.
+All list and search APIs must be paginated. The current implementation uses
+keyset cursor pagination, not `OFFSET`.
 
 Default page sizes:
 
-- Home/recent list: `50-100` records.
-- Search results: `30-50` records.
+- Home/recent list: `80` records, clamped to `1-100`.
+- Search results: `80` records, clamped to `1-100`.
 
-Avoid deep `OFFSET` pagination for large collections. Use cursor pagination
-instead.
+Current cursor shape:
 
-Recommended cursors:
+- `updatedAt`: last row's `updated_at`.
+- `id`: last row's stable tie-breaker.
+- `rank`: optional FTS rank from `bm25(notes_fts)`.
 
-- Recent list: `(created_at, id)`.
-- Updated list: `(updated_at, id)`.
-- Search: rank plus a stable tie-breaker such as `id`.
+Recent and filter-only pages use `(updated_at DESC, id DESC)`.
+
+FTS pages use `(bm25(notes_fts), updated_at DESC, id DESC)`. The next page
+condition is rank first, then `updated_at`, then `id`, so tied ranks still page
+deterministically.
+
+Count convention:
+
+- First page returns the real `total_count`.
+- Cursor pages return `total_count = -1` as a sentinel meaning "unchanged; keep
+  the count already cached by the frontend".
 
 Search APIs should return list-preview fields first, not full heavyweight
 payloads. Load full content only when opening a card if the list preview is not
@@ -70,25 +98,40 @@ Search constraints:
 - Return snippets or preview text for result lists.
 - Avoid sending thousands of full records across the Tauri IPC boundary.
 
+Current short-query behavior:
+
+- Queries with only filters (`#tag`, `!#tag`, `@kind`, `!@kind`) are allowed.
+- Text-only queries require every text term to be at least 3 characters or at
+  least 2 CJK characters.
+- Terms that are allowed but too short for trigram FTS use the SQLite `LIKE`
+  fallback.
+
+Reason: SQLite FTS5 trigram search needs enough input to form trigram tokens.
+Two CJK characters provide enough UTF-8 bytes for useful matching, while a
+single CJK character is too broad and would fall back to a costly scan.
+
 Search result ranking should be computed in SQLite where possible, then returned
 as a small page of results.
 
 ## Frontend Rendering
 
-The frontend must only render a small active window of cards.
+The frontend must not load the full collection at once.
 
-Initial approach:
+Current behavior:
 
-- Render only the first page on load.
-- Fetch the next page as the user scrolls.
-- Keep the active DOM count bounded when browsing many pages.
+- Initial render loads the first page: `80` cards.
+- The notes area listens for scroll and requests the next page near the bottom
+  of the scroll region.
+- Loaded pages are appended to `notes.value`; the active DOM currently grows
+  with browsing.
+- Masonry columns are computed from the loaded notes only, not the full
+  database.
 
-Suggested limits:
+Planned optimization:
 
-- Initial render: about `50` cards.
-- Normal loaded window: about `200-500` cards.
-- For longer browsing sessions, use virtualized list/masonry rendering and
-  recycle offscreen DOM.
+- For very long browsing sessions, add virtualized masonry rendering or
+  offscreen DOM recycling.
+- Keep the normal active DOM window bounded, for example `200-500` cards.
 
 The UI should never map over a collection containing tens of thousands of notes.
 
@@ -110,6 +153,8 @@ Avoid returning:
 
 ## Performance Rules
 
+Current hard rules and implementation constraints:
+
 - Do not load all notes into frontend memory.
 - Do not render all notes into the DOM.
 - Do not use deep `OFFSET` pagination at million-record scale.
@@ -117,5 +162,6 @@ Avoid returning:
 - Do not return unbounded FTS results.
 - Do not query on every keystroke without debounce.
 
-With these constraints, SQLite + FTS5 + cursor pagination + bounded frontend
-rendering is a reasonable architecture for million-scale local text collections.
+SQLite + FTS5 + keyset cursor pagination is the current foundation for
+million-scale local text collections. Bounded DOM rendering is still the main
+remaining frontend scalability improvement.

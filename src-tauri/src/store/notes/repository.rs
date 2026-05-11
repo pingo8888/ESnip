@@ -197,3 +197,7 @@ fn now_millis() -> i64 {
         .map(|duration| duration.as_millis() as i64)
         .unwrap_or_default()
 }
+
+#[cfg(test)]
+#[path = "../../tests/store/notes/repository.rs"]
+mod tests;

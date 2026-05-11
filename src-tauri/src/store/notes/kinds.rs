@@ -48,3 +48,7 @@ fn matches_kind_alias(alias: &str, kind: &str) -> bool {
         alias == kind
     }
 }
+
+#[cfg(test)]
+#[path = "../../tests/store/notes/kinds.rs"]
+mod tests;

@@ -565,3 +565,7 @@ impl HotkeyKey {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "../tests/store/settings.rs"]
+mod tests;

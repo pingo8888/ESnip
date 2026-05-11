@@ -557,3 +557,7 @@ fn count_cjk_chars(value: &str) -> usize {
         })
         .count()
 }
+
+#[cfg(test)]
+#[path = "../../tests/store/notes/search.rs"]
+mod tests;

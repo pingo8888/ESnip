@@ -19,3 +19,7 @@ pub(crate) use tags::{delete_tag, list_note_kind_counts, list_tags, rename_tag};
 pub(crate) use types::{
     NoteDto, NoteKindCountDto, NotesPage, SaveNoteInput, TagSuggestionDto, UpdateNoteInput,
 };
+
+#[cfg(test)]
+#[path = "../../tests/store/notes/test_utils.rs"]
+pub(crate) mod test_utils;

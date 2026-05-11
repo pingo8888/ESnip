@@ -233,3 +233,7 @@ fn clean_tag(tag: &str) -> Option<String> {
         Some(tag.to_string())
     }
 }
+
+#[cfg(test)]
+#[path = "../../tests/store/notes/tags.rs"]
+mod tests;
