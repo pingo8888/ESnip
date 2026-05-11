@@ -27,7 +27,19 @@ type QuickCaptureContentPayload = {
 
 const activePage = ref<ActivePage>("home");
 const settingsReturnPage = ref<WorkPage | null>(null);
-const { notes, addNote, deleteNote, loadInitialNotes, loadNextNotesPage, refreshNotes, searchQuery, setSearchQuery, totalCount, updateNote } = useNoteCollection();
+const {
+  notes,
+  addNote,
+  deleteNote,
+  isSearchQueryTooShort,
+  loadInitialNotes,
+  loadNextNotesPage,
+  refreshNotes,
+  searchQuery,
+  setSearchQuery,
+  totalCount,
+  updateNote,
+} = useNoteCollection();
 const { checkAndInstallUpdate, checkForUpdate, hasUpdate, isBusy: isUpdateBusy } = useAppUpdater();
 const editingNote = ref<Note | null>(null);
 const deletingNote = ref<Note | null>(null);
@@ -86,6 +98,18 @@ function updateMasonryColumns() {
 
   noteColumnAssignments = nextAssignments;
   masonryColumns.value = columns;
+}
+
+function resetMasonryAssignments() {
+  noteColumnAssignments = new Map();
+}
+
+function isAppendedNotes(previousNotes: Note[] | undefined, nextNotes: Note[]) {
+  if (!previousNotes || nextNotes.length < previousNotes.length) {
+    return false;
+  }
+
+  return previousNotes.every((note, index) => nextNotes[index]?.id === note.id);
 }
 
 function setNotesScrollElement(el: HTMLElement | null) {
@@ -188,11 +212,13 @@ async function saveNewNote(note: NoteInput) {
 }
 
 async function saveEditedNote(note: NoteInput | NoteUpdateInput) {
-  if (!("id" in note)) {
+  const currentEditingNote = editingNote.value;
+
+  if (!("id" in note) || !currentEditingNote) {
     return;
   }
 
-  const previousKind = editingNote.value.kind;
+  const previousKind = currentEditingNote.kind;
   await updateNote(note);
   if (previousKind !== note.kind) {
     noteKindCountsVersion.value += 1;
@@ -257,7 +283,21 @@ onUnmounted(() => {
   unlistenQuickCaptureContent?.();
 });
 
-watch([notes, columnCount], updateMasonryColumns, { immediate: true });
+watch(
+  notes,
+  (nextNotes, previousNotes) => {
+    if (!isAppendedNotes(previousNotes, nextNotes)) {
+      resetMasonryAssignments();
+    }
+
+    updateMasonryColumns();
+  },
+  { immediate: true },
+);
+
+watch(columnCount, () => {
+  updateMasonryColumns();
+});
 
 async function minimizeWindow() {
   await getCurrentWindow().minimize();
@@ -320,6 +360,7 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
       :masonry-columns="masonryColumns"
       :note-kind-counts-version="noteKindCountsVersion"
       :column-width="columnLayout.cardWidth"
+      :is-search-query-too-short="isSearchQueryTooShort"
       :result-count="totalCount"
       :search-query="searchQuery"
       :update-available="hasUpdate"

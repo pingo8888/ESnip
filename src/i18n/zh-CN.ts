@@ -14,6 +14,7 @@ export const zhCNMessages = {
   "home.searchAria": "搜索笔记",
   "home.searchPlaceholder": "搜索你的摘抄...",
   "home.searchResults": "{count}条 搜索结果",
+  "home.searchTooShort": "每个搜索词至少 3 个字符或 2 个中文字符",
   "home.updateAvailable": "发现新版本",
   "kind.paragraph": "段落",
   "kind.sentence": "句子",

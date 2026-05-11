@@ -16,6 +16,7 @@ export const enUSMessages = {
   "home.searchAria": "Search notes",
   "home.searchPlaceholder": "Search your excerpts...",
   "home.searchResults": "{count} search results",
+  "home.searchTooShort": "Enter at least 3 characters or 2 CJK characters per word",
   "home.updateAvailable": "Update available",
   "kind.paragraph": "Paragraph",
   "kind.sentence": "Sentence",

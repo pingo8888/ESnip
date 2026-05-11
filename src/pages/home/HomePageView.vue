@@ -16,6 +16,7 @@ import { parseHighlightTerms } from "./searchHighlight";
 
 const props = defineProps<{
   columnWidth: number;
+  isSearchQueryTooShort: boolean;
   masonryColumns: Note[][];
   noteKindCountsVersion: number;
   resultCount: number;
@@ -46,11 +47,17 @@ const hasRequestedNearBottomLoad = ref(false);
 const notesScrollEl = ref<HTMLElement | null>(null);
 const noteKindCounts = ref<Record<string, number>>({});
 const visibleNoteCount = computed(() => props.masonryColumns.reduce((total, column) => total + column.length, 0));
-const sectionTitle = computed(() =>
-  props.searchQuery.trim()
-    ? t("home.searchResults", { count: props.resultCount })
-    : t("home.cardsCount", { count: props.resultCount }),
-);
+const sectionTitle = computed(() => {
+  if (props.isSearchQueryTooShort) {
+    return t("home.searchTooShort");
+  }
+
+  if (props.searchQuery.trim()) {
+    return t("home.searchResults", { count: props.resultCount });
+  }
+
+  return t("home.cardsCount", { count: props.resultCount });
+});
 const highlightTerms = computed(() => parseHighlightTerms(props.searchQuery));
 const noteKindSearchSuggestions = computed<SuggestionItem[]>(() =>
   noteKindDefinitions.map((definition) => ({

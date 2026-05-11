@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import type { Note, NoteInput, NotesCursor, NoteUpdateInput } from "./noteTypes";
 import {
   createNote as createPersistedNote,
@@ -15,6 +15,10 @@ export function useNoteCollection() {
   const isLoading = ref(false);
   const error = ref<string | null>(null);
   const searchQuery = ref("");
+  const isSearchQueryTooShort = computed(() => {
+    const trimmedQuery = searchQuery.value.trim();
+    return Boolean(trimmedQuery && !canRunSearch(trimmedQuery));
+  });
   let searchTimer: ReturnType<typeof setTimeout> | undefined;
   let requestSerial = 0;
 
@@ -142,6 +146,15 @@ export function useNoteCollection() {
       clearTimeout(searchTimer);
     }
 
+    if (query.trim() && !canRunSearch(query.trim())) {
+      notes.value = [];
+      nextCursor.value = null;
+      totalCount.value = 0;
+      isLoading.value = false;
+      error.value = null;
+      return;
+    }
+
     searchTimer = setTimeout(() => {
       void applySearchQuery(query);
     }, 220);
@@ -188,6 +201,7 @@ export function useNoteCollection() {
     addNote,
     deleteNote,
     error,
+    isSearchQueryTooShort,
     isLoading,
     loadInitialNotes,
     loadNextNotesPage,
