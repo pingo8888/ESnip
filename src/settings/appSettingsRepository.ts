@@ -22,8 +22,12 @@ export async function updateAppSettings(settings: AppSettings): Promise<AppSetti
   return invoke<AppSettings>("update_app_settings", { settings });
 }
 
-export async function setHotkeysEnabled(enabled: boolean): Promise<void> {
-  await invoke("set_hotkeys_enabled", { enabled });
+export async function requestHotkeysDisabled(): Promise<void> {
+  await invoke("request_hotkeys_disabled");
+}
+
+export async function releaseHotkeysDisabled(): Promise<void> {
+  await invoke("release_hotkeys_disabled");
 }
 
 export async function chooseDataDir(): Promise<string | null> {

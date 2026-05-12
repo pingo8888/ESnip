@@ -10,7 +10,7 @@ use tauri::{AppHandle, State};
 use crate::{
     app::{
         platform::set_app_chrome_labels,
-        state::{DbState, HotkeyEnabled, HotkeyState},
+        state::{DbState, HotkeyDisableCount, HotkeyState},
     },
     store::{
         notes::{open_connection_at_dir, DB_FILE_NAME, DB_SHM_FILE_NAME, DB_WAL_FILE_NAME},
@@ -39,11 +39,18 @@ pub(crate) fn update_app_settings(
 }
 
 #[tauri::command]
-pub(crate) fn set_hotkeys_enabled(
-    hotkey_enabled: State<'_, HotkeyEnabled>,
-    enabled: bool,
+pub(crate) fn request_hotkeys_disabled(
+    hotkey_disable_count: State<'_, HotkeyDisableCount>,
 ) -> Result<(), String> {
-    hotkey_enabled.set_enabled(enabled);
+    hotkey_disable_count.request_disabled();
+    Ok(())
+}
+
+#[tauri::command]
+pub(crate) fn release_hotkeys_disabled(
+    hotkey_disable_count: State<'_, HotkeyDisableCount>,
+) -> Result<(), String> {
+    hotkey_disable_count.release_disabled();
     Ok(())
 }
 

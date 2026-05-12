@@ -1,5 +1,5 @@
 use std::sync::{
-    atomic::{AtomicBool, Ordering},
+    atomic::{AtomicBool, AtomicUsize, Ordering},
     Arc, Mutex,
 };
 
@@ -54,16 +54,36 @@ impl Default for HotkeyState {
 }
 
 #[derive(Clone)]
-pub(crate) struct HotkeyEnabled(pub(crate) Arc<AtomicBool>);
+pub(crate) struct HotkeyDisableCount(pub(crate) Arc<AtomicUsize>);
 
-impl Default for HotkeyEnabled {
+impl Default for HotkeyDisableCount {
     fn default() -> Self {
-        Self(Arc::new(AtomicBool::new(true)))
+        Self(Arc::new(AtomicUsize::new(0)))
     }
 }
 
-impl HotkeyEnabled {
-    pub(crate) fn set_enabled(&self, enabled: bool) {
-        self.0.store(enabled, Ordering::Relaxed);
+impl HotkeyDisableCount {
+    pub(crate) fn request_disabled(&self) {
+        self.0.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub(crate) fn release_disabled(&self) {
+        let mut current = self.0.load(Ordering::Relaxed);
+
+        while current > 0 {
+            match self.0.compare_exchange_weak(
+                current,
+                current - 1,
+                Ordering::Relaxed,
+                Ordering::Relaxed,
+            ) {
+                Ok(_) => return,
+                Err(next_current) => current = next_current,
+            }
+        }
+    }
+
+    pub(crate) fn is_disabled(&self) -> bool {
+        self.0.load(Ordering::Relaxed) > 0
     }
 }

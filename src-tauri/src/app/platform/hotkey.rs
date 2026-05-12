@@ -8,7 +8,7 @@ use tauri::{Emitter, Manager};
 use crate::{
     app::{
         platform::tray::show_main_window,
-        state::{HotkeyEnabled, HotkeyShutdown, HotkeyState},
+        state::{HotkeyDisableCount, HotkeyShutdown, HotkeyState},
     },
     core::text::clean_captured_text,
     store::settings::{
@@ -121,7 +121,7 @@ where
     AppHandle<R>: Send + 'static,
 {
     let shutdown = app.state::<HotkeyShutdown>().0.clone();
-    let hotkey_enabled = app.state::<HotkeyEnabled>().0.clone();
+    let hotkey_disable_count = app.state::<HotkeyDisableCount>().inner().clone();
     std::thread::spawn(move || {
         use std::{sync::atomic::Ordering, thread, time::Duration};
         use windows_sys::Win32::UI::{
@@ -151,7 +151,7 @@ where
                     HotkeySettings::default()
                 });
 
-            if !hotkey_enabled.load(Ordering::Relaxed) {
+            if hotkey_disable_count.is_disabled() {
                 unregister_hotkeys(&mut registered);
                 was_enabled = false;
             } else if !was_enabled || current_hotkeys.as_ref() != Some(&desired_hotkeys) {
@@ -177,7 +177,7 @@ where
 
             while unsafe { PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, PM_REMOVE) } != 0 {
                 if msg.message == WM_HOTKEY {
-                    if !hotkey_enabled.load(Ordering::Relaxed) {
+                    if hotkey_disable_count.is_disabled() {
                         continue;
                     }
                     if msg.wParam == HOTKEY_ID_TITLE as usize {

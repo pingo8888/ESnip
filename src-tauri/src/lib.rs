@@ -7,11 +7,11 @@ use crate::app::{
     commands::{
         choose_data_dir, create_note, delete_note, delete_tag, find_note_by_title,
         get_app_settings, list_note_kind_counts, list_notes_page, list_tags, migrate_data_dir,
-        rename_tag, reveal_data_dir, search_notes, set_hotkeys_enabled, update_app_chrome_title,
-        update_app_settings, update_note,
+        release_hotkeys_disabled, rename_tag, request_hotkeys_disabled, reveal_data_dir,
+        search_notes, update_app_chrome_title, update_app_settings, update_note,
     },
     platform::{handle_window_event, show_main_window},
-    state::{AppQuitState, HotkeyEnabled, HotkeyShutdown, HotkeyState, SettingsState},
+    state::{AppQuitState, HotkeyDisableCount, HotkeyShutdown, HotkeyState, SettingsState},
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -24,7 +24,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppQuitState::default())
-        .manage(HotkeyEnabled::default())
+        .manage(HotkeyDisableCount::default())
         .manage(HotkeyShutdown::default())
         .manage(HotkeyState::default())
         .manage(SettingsState::default())
@@ -45,7 +45,8 @@ pub fn run() {
             choose_data_dir,
             migrate_data_dir,
             reveal_data_dir,
-            set_hotkeys_enabled,
+            request_hotkeys_disabled,
+            release_hotkeys_disabled,
             update_app_chrome_title,
             update_app_settings
         ])

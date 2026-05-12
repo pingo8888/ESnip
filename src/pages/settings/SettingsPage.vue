@@ -6,8 +6,9 @@ import { useI18n } from "../../i18n";
 import {
   chooseDataDir,
   migrateDataDir,
+  releaseHotkeysDisabled,
+  requestHotkeysDisabled,
   revealDataDir,
-  setHotkeysEnabled,
   type HotkeyAction,
   type SearchEngine,
 } from "../../settings/appSettingsRepository";
@@ -48,6 +49,7 @@ const shortcutMessages = reactive<Record<HotkeyAction, string>>({
   save: "",
   title: "",
 });
+let globalHotkeysDisabledByCapture = false;
 const { languageOptions, locale, selectedLanguageLabel, setLocale, t, translateError } = useI18n();
 const { dataDir, hotkeys, replaceSettings, resetHotkey, searchEngine, setHotkey, setSearchEngine } = useAppSettings();
 const { checkAndInstallUpdate, isBusy: isUpdateBusy, message: updateMessage } = useAppUpdater();
@@ -240,7 +242,7 @@ async function beginHotkeyCapture(action: HotkeyAction) {
   capturingHotkey.value = action;
   hotkeyDraft.value = hotkeys.value[action];
   shortcutMessages[action] = t("settings.shortcuts.captureHelp");
-  await setHotkeysEnabled(false);
+  await disableGlobalHotkeysForCapture();
   await nextTick();
   document.querySelector<HTMLInputElement>(`[data-hotkey-capture="${action}"]`)?.focus();
 }
@@ -252,7 +254,33 @@ async function cancelHotkeyCapture() {
 
   capturingHotkey.value = null;
   hotkeyDraft.value = "";
-  await setHotkeysEnabled(true);
+  await releaseGlobalHotkeysForCapture();
+}
+
+async function disableGlobalHotkeysForCapture() {
+  if (globalHotkeysDisabledByCapture) {
+    return;
+  }
+
+  try {
+    await requestHotkeysDisabled();
+    globalHotkeysDisabledByCapture = true;
+  } catch (error) {
+    console.error("Failed to disable global hotkeys for shortcut capture", error);
+  }
+}
+
+async function releaseGlobalHotkeysForCapture() {
+  if (!globalHotkeysDisabledByCapture) {
+    return;
+  }
+
+  try {
+    await releaseHotkeysDisabled();
+    globalHotkeysDisabledByCapture = false;
+  } catch (error) {
+    console.error("Failed to restore global hotkeys after shortcut capture", error);
+  }
 }
 
 async function resetShortcut(action: HotkeyAction) {
@@ -353,7 +381,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener("keydown", handleSettingsKeydown, true);
-  void setHotkeysEnabled(true);
+  void releaseGlobalHotkeysForCapture();
 });
 
 watch(activeTab, (tab) => {

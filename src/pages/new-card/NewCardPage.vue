@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { ArrowLeft, Settings } from "lucide-vue-next";
 import { useI18n } from "../../i18n";
 import { isHotkeyEvent } from "../../settings/hotkeys";
+import { releaseHotkeysDisabled, requestHotkeysDisabled } from "../../settings/appSettingsRepository";
 import { useAppSettings } from "../../settings/useAppSettings";
 import { noteKindDefinitions } from "../../notes/noteKinds";
 import { computeColumnLayout } from "../home/cardColumns";
@@ -44,6 +45,7 @@ const tagsInput = ref("");
 const tagSuggestionsOpen = ref(false);
 const { t, translateNoteKind } = useI18n();
 const { hotkeys } = useAppSettings();
+let globalHotkeysDisabledByPage = false;
 
 const windowWidth = ref(document.documentElement.clientWidth);
 
@@ -104,17 +106,42 @@ function saveCard() {
   );
 }
 
-function applyQuickCaptureContent(payload: { content?: string | null; kind?: NoteKind | null }) {
-  kind.value = payload.kind ?? "sentence";
+function applyLocalCaptureHotkey(event: KeyboardEvent) {
+  const nextKind = localCaptureHotkeyKind(event);
 
-  const content = payload.content?.trim() ?? "";
-  if (content) {
-    excerpt.value = content;
+  if (!nextKind) {
+    return false;
   }
+
+  event.preventDefault();
+  event.stopPropagation();
+  kind.value = nextKind;
+  return true;
+}
+
+function localCaptureHotkeyKind(event: KeyboardEvent): NoteKind | null {
+  // Inside the editor, capture hotkeys switch type locally instead of invoking desktop text capture.
+  if (isHotkeyEvent(event, hotkeys.value.title)) {
+    return "word";
+  }
+
+  if (isHotkeyEvent(event, hotkeys.value.content)) {
+    return "sentence";
+  }
+
+  if (isHotkeyEvent(event, hotkeys.value.paragraph)) {
+    return "paragraph";
+  }
+
+  return null;
 }
 
 function handlePageKeydown(event: KeyboardEvent) {
   if (!props.active || event.defaultPrevented || event.isComposing) {
+    return;
+  }
+
+  if (applyLocalCaptureHotkey(event)) {
     return;
   }
 
@@ -141,6 +168,23 @@ function formatTagsInput(tags: string[]) {
   return tags.map((tag) => `#${tag}`).join(" ");
 }
 
+async function syncGlobalHotkeysWithPageActive(active: boolean) {
+  try {
+    if (active && !globalHotkeysDisabledByPage) {
+      await requestHotkeysDisabled();
+      globalHotkeysDisabledByPage = true;
+      return;
+    }
+
+    if (!active && globalHotkeysDisabledByPage) {
+      await releaseHotkeysDisabled();
+      globalHotkeysDisabledByPage = false;
+    }
+  } catch (error) {
+    console.error("Failed to toggle global hotkeys", error);
+  }
+}
+
 watch(
   () => [props.mode, props.initialNote, props.initialTitle, props.initialContent, props.initialKind, props.draftKey] as const,
   ([mode, note, initialTitle, initialContent, initialKind]) => {
@@ -149,6 +193,14 @@ watch(
     title.value = mode === "edit" ? (note?.title ?? "") : initialTitle;
     excerpt.value = mode === "edit" ? (note?.excerpt ?? "") : initialContent;
     tagsInput.value = note ? formatTagsInput(note.tags) : "";
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.active,
+  (active) => {
+    void syncGlobalHotkeysWithPageActive(active);
   },
   { immediate: true },
 );
@@ -162,10 +214,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener("keydown", handlePageKeydown, true);
   window.removeEventListener("resize", onWindowResize);
-});
-
-defineExpose({
-  applyQuickCaptureContent,
+  void syncGlobalHotkeysWithPageActive(false);
 });
 </script>
 

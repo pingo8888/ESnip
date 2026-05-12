@@ -6,6 +6,6 @@ pub(crate) use notes::{
     list_notes_page, list_tags, rename_tag, search_notes, update_note,
 };
 pub(crate) use settings::{
-    choose_data_dir, get_app_settings, migrate_data_dir, reveal_data_dir, set_hotkeys_enabled,
-    update_app_chrome_title, update_app_settings,
+    choose_data_dir, get_app_settings, migrate_data_dir, release_hotkeys_disabled,
+    request_hotkeys_disabled, reveal_data_dir, update_app_chrome_title, update_app_settings,
 };
