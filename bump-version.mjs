@@ -15,13 +15,6 @@ updateJson("package.json", (json) => {
   json.version = version;
 });
 
-updateJson("package-lock.json", (json) => {
-  json.version = version;
-  if (json.packages?.[""]) {
-    json.packages[""].version = version;
-  }
-});
-
 updateJson("src-tauri/tauri.conf.json", (json) => {
   json.version = version;
 });
