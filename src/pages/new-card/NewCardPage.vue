@@ -104,6 +104,15 @@ function saveCard() {
   );
 }
 
+function applyQuickCaptureContent(payload: { content?: string | null; kind?: NoteKind | null }) {
+  kind.value = payload.kind ?? "sentence";
+
+  const content = payload.content?.trim() ?? "";
+  if (content) {
+    excerpt.value = content;
+  }
+}
+
 function handlePageKeydown(event: KeyboardEvent) {
   if (!props.active || event.defaultPrevented || event.isComposing) {
     return;
@@ -153,6 +162,10 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener("keydown", handlePageKeydown, true);
   window.removeEventListener("resize", onWindowResize);
+});
+
+defineExpose({
+  applyQuickCaptureContent,
 });
 </script>
 

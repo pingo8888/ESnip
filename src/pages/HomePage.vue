@@ -24,6 +24,9 @@ type QuickCaptureContentPayload = {
   content?: string | null;
   kind?: NoteKind | null;
 };
+type NewCardPageExpose = {
+  applyQuickCaptureContent: (payload: QuickCaptureContentPayload) => void;
+};
 
 const activePage = ref<ActivePage>("home");
 const settingsReturnPage = ref<WorkPage | null>(null);
@@ -47,6 +50,8 @@ const newCardInitialTitle = ref("");
 const newCardInitialContent = ref("");
 const newCardInitialKind = ref<NoteKind>("word");
 const newCardDraftKey = ref(0);
+const newCardPageRef = ref<NewCardPageExpose | null>(null);
+const editCardPageRef = ref<NewCardPageExpose | null>(null);
 const notesScrollEl = ref<HTMLElement | null>(null);
 const notesScrollWidth = ref(0);
 const alwaysOnTop = ref(false);
@@ -199,8 +204,26 @@ async function handleQuickCapture(payload: QuickCapturePayload) {
 }
 
 function handleQuickCaptureContent(payload: QuickCaptureContentPayload) {
+  if (applyQuickCaptureContentToActiveCardPage(payload)) {
+    return;
+  }
+
   const content = payload.content?.trim() ?? "";
   showNewCardPage("", content, payload.kind ?? "sentence");
+}
+
+function applyQuickCaptureContentToActiveCardPage(payload: QuickCaptureContentPayload) {
+  if (activePage.value === "new-card" && newCardPageRef.value) {
+    newCardPageRef.value.applyQuickCaptureContent(payload);
+    return true;
+  }
+
+  if (activePage.value === "edit-card" && editCardPageRef.value) {
+    editCardPageRef.value.applyQuickCaptureContent(payload);
+    return true;
+  }
+
+  return false;
 }
 
 async function saveNewNote(note: NoteInput) {
@@ -375,6 +398,7 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
       @update-search-query="setSearchQuery"
     />
     <NewCardPage
+      ref="newCardPageRef"
       v-if="activePage === 'new-card' || settingsReturnPage === 'new-card'"
       v-show="activePage === 'new-card'"
       :draft-key="newCardDraftKey"
@@ -388,6 +412,7 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
       @save="saveNewNote"
     />
     <NewCardPage
+      ref="editCardPageRef"
       v-if="(activePage === 'edit-card' || settingsReturnPage === 'edit-card') && editingNote"
       v-show="activePage === 'edit-card'"
       mode="edit"
