@@ -97,7 +97,7 @@ fn persist_window_state<R: tauri::Runtime>(handle: &tauri::AppHandle<R>) {
     let Ok(position) = webview.outer_position() else {
         return;
     };
-    let Ok(size) = webview.outer_size() else {
+    let Ok(size) = webview.inner_size() else {
         return;
     };
     let _ = save_window_state(handle, position.x, position.y, size.width, size.height);
