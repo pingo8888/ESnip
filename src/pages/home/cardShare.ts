@@ -1,14 +1,24 @@
 import { invoke } from "@tauri-apps/api/core";
+import { measuredHomeCardSize } from "./homeCardMetrics";
 
 export async function copyCardElementAsPng(element: HTMLElement): Promise<void> {
   const { toBlob } = await import("html-to-image");
 
   await waitForFrame();
 
+  const rect = element.getBoundingClientRect();
+  const width = Math.round(measuredHomeCardSize.value?.width ?? rect.width);
+  const height = Math.round(rect.height);
+
   const blob = await toBlob(element, {
     backgroundColor: getComputedStyle(element).backgroundColor,
     cacheBust: true,
-    pixelRatio: window.devicePixelRatio || 1,
+    height,
+    pixelRatio: 1,
+    style: {
+      width: `${width}px`,
+    },
+    width,
   });
 
   if (!blob) {
