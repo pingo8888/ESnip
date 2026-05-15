@@ -5,10 +5,10 @@ mod store;
 use crate::app::{
     bootstrap::setup_app,
     commands::{
-        choose_data_dir, create_note, delete_note, delete_tag, find_note_by_title,
-        get_app_settings, list_note_kind_counts, list_notes_page, list_tags, migrate_data_dir,
-        release_hotkeys_disabled, rename_tag, request_hotkeys_disabled, reveal_data_dir,
-        search_notes, update_app_chrome_title, update_app_settings, update_note,
+        choose_data_dir, copy_png_to_clipboard, create_note, delete_note, delete_tag,
+        find_note_by_title, get_app_settings, list_note_kind_counts, list_notes_page, list_tags,
+        migrate_data_dir, release_hotkeys_disabled, rename_tag, request_hotkeys_disabled,
+        reveal_data_dir, search_notes, update_app_chrome_title, update_app_settings, update_note,
     },
     platform::{handle_window_event, show_main_window},
     state::{AppQuitState, HotkeyDisableCount, HotkeyShutdown, HotkeyState, SettingsState},
@@ -48,7 +48,8 @@ pub fn run() {
             request_hotkeys_disabled,
             release_hotkeys_disabled,
             update_app_chrome_title,
-            update_app_settings
+            update_app_settings,
+            copy_png_to_clipboard
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

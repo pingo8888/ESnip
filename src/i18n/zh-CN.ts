@@ -6,6 +6,7 @@ export const zhCNMessages = {
   "common.edit": "编辑",
   "common.save": "保存",
   "common.settings": "设置",
+  "common.share": "分享",
   "common.untitled": "无标题",
   "home.addNote": "添加词条",
   "home.appActions": "应用操作",

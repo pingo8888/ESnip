@@ -10,6 +10,7 @@ defineEmits<{
   close: [];
   delete: [];
   edit: [];
+  share: [];
 }>();
 
 const { t } = useI18n();
@@ -24,6 +25,7 @@ const { t } = useI18n();
     @pointerdown.stop
   >
     <button type="button" role="menuitem" @click="$emit('edit')">{{ t("common.edit") }}</button>
+    <button type="button" role="menuitem" @click="$emit('share')">{{ t("common.share") }}</button>
     <div class="menu-separator" aria-hidden="true"></div>
     <button type="button" class="danger-item" role="menuitem" @click="$emit('delete')">{{ t("common.delete") }}...</button>
   </div>

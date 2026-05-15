@@ -15,6 +15,9 @@ pub(crate) const DEFAULT_TITLE_HOTKEY: &str = "Alt+W";
 pub(crate) const DEFAULT_CONTENT_HOTKEY: &str = "Alt+S";
 pub(crate) const DEFAULT_PARAGRAPH_HOTKEY: &str = "Alt+P";
 const DEFAULT_SAVE_HOTKEY: &str = "Alt+Enter";
+const MIN_RESTORED_WINDOW_WIDTH: u32 = 360;
+const MIN_RESTORED_WINDOW_HEIGHT: u32 = 320;
+const WINDOWS_MINIMIZED_POSITION_SENTINEL: i32 = -30_000;
 
 #[derive(Clone, Debug)]
 struct ParsedHotkey {
@@ -155,6 +158,10 @@ pub(crate) fn save_window_state<R: Runtime>(
     width: u32,
     height: u32,
 ) -> Result<(), String> {
+    if !is_valid_window_position(x, y) || !is_valid_window_size(width, height) {
+        return Ok(());
+    }
+
     mutate_settings_with_lock(app, false, |settings| {
         if settings.window_x == Some(x)
             && settings.window_y == Some(y)
@@ -300,11 +307,33 @@ fn normalize_settings<R: Runtime>(
             hotkeys
         },
         search_engine: normalize_search_engine(settings.search_engine),
-        window_x: settings.window_x,
-        window_y: settings.window_y,
-        window_width: settings.window_width,
-        window_height: settings.window_height,
+        window_x: sanitize_window_position(settings.window_x, settings.window_y).map(|(x, _)| x),
+        window_y: sanitize_window_position(settings.window_x, settings.window_y).map(|(_, y)| y),
+        window_width: sanitize_window_size(settings.window_width, settings.window_height)
+            .map(|(width, _)| width),
+        window_height: sanitize_window_size(settings.window_width, settings.window_height)
+            .map(|(_, height)| height),
     })
+}
+
+fn sanitize_window_position(x: Option<i32>, y: Option<i32>) -> Option<(i32, i32)> {
+    let (x, y) = (x?, y?);
+
+    is_valid_window_position(x, y).then_some((x, y))
+}
+
+fn sanitize_window_size(width: Option<u32>, height: Option<u32>) -> Option<(u32, u32)> {
+    let (width, height) = (width?, height?);
+
+    is_valid_window_size(width, height).then_some((width, height))
+}
+
+fn is_valid_window_position(x: i32, y: i32) -> bool {
+    x > WINDOWS_MINIMIZED_POSITION_SENTINEL && y > WINDOWS_MINIMIZED_POSITION_SENTINEL
+}
+
+fn is_valid_window_size(width: u32, height: u32) -> bool {
+    width >= MIN_RESTORED_WINDOW_WIDTH && height >= MIN_RESTORED_WINDOW_HEIGHT
 }
 
 fn normalize_locale(locale: String) -> String {

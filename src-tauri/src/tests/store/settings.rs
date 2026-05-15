@@ -78,6 +78,24 @@ fn apply_user_settings_preserves_window_state() {
 }
 
 #[test]
+fn minimized_window_position_is_not_restored() {
+    assert_eq!(sanitize_window_position(Some(-32_000), Some(-32_000)), None);
+    assert_eq!(
+        sanitize_window_position(Some(100), Some(120)),
+        Some((100, 120))
+    );
+}
+
+#[test]
+fn tiny_window_size_is_not_restored() {
+    assert_eq!(sanitize_window_size(Some(208), Some(55)), None);
+    assert_eq!(
+        sanitize_window_size(Some(768), Some(1080)),
+        Some((768, 1080))
+    );
+}
+
+#[test]
 fn windows_verbatim_path_prefix_is_stripped() {
     assert_eq!(strip_windows_verbatim_prefix(r"\\?\D:\test"), r"D:\test");
     assert_eq!(

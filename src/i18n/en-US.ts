@@ -8,6 +8,7 @@ export const enUSMessages = {
   "common.edit": "Edit",
   "common.save": "Save",
   "common.settings": "Settings",
+  "common.share": "Share",
   "common.untitled": "Untitled",
   "home.addNote": "Add card",
   "home.appActions": "App actions",

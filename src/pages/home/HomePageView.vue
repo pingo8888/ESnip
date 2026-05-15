@@ -39,6 +39,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const { searchEngine } = useAppSettings();
 const contextMenu = ref<{
+  cardElement: HTMLElement;
   note: Note;
   x: number;
   y: number;
@@ -72,10 +73,16 @@ const searchStaticSuggestions = computed(() => ({
 
 function openContextMenu(event: MouseEvent, note: Note) {
   const menuWidth = 198;
-  const menuHeight = 78;
+  const menuHeight = 110;
   const padding = 8;
+  const cardElement = event.currentTarget;
+
+  if (!(cardElement instanceof HTMLElement)) {
+    return;
+  }
 
   contextMenu.value = {
+    cardElement,
     note,
     x: Math.max(padding, Math.min(event.clientX, window.innerWidth - menuWidth - padding)),
     y: Math.max(padding, Math.min(event.clientY, window.innerHeight - menuHeight - padding)),
@@ -102,6 +109,22 @@ function deleteContextNote() {
 
   emit("deleteNote", contextMenu.value.note);
   closeContextMenu();
+}
+
+async function shareContextNote() {
+  if (!contextMenu.value) {
+    return;
+  }
+
+  const { cardElement } = contextMenu.value;
+  closeContextMenu();
+
+  try {
+    const { copyCardElementAsPng } = await import("./cardShare");
+    await copyCardElementAsPng(cardElement);
+  } catch (error) {
+    console.error("Failed to copy card PNG", error);
+  }
 }
 
 function handleGlobalPointerDown() {
@@ -314,6 +337,7 @@ watch(
       @close="closeContextMenu"
       @delete="deleteContextNote"
       @edit="editContextNote"
+      @share="shareContextNote"
     />
   </main>
 </template>
