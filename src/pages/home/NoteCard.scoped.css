@@ -107,7 +107,7 @@
   user-select: text;
   margin: 12px 0 10px;
   color: var(--color-text);
-  font-size: clamp(1rem, 1.25vw, 1.28rem);
+  font-size: 1.05rem;
   font-weight: 500;
   line-height: 1.08;
 }

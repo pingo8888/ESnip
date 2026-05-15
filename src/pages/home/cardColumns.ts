@@ -9,7 +9,7 @@ export function computeColumnLayout(containerWidth: number): ColumnLayout {
   }
 
   const columnGap = 14;
-  const minColumnWidth = containerWidth < 920 ? 190 : 210;
+  const minColumnWidth = 278;
   const columnCount = Math.max(1, Math.floor((containerWidth + columnGap) / (minColumnWidth + columnGap)));
   const cardWidth = (containerWidth - (columnCount - 1) * columnGap) / columnCount;
 
