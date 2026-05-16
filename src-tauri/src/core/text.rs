@@ -20,25 +20,6 @@ pub(crate) fn clean_captured_text(text: String) -> Option<String> {
     }
 }
 
-pub(crate) fn build_fts_query(value: &str) -> Option<String> {
-    let trimmed = value.trim();
-
-    if trimmed.is_empty() {
-        return None;
-    }
-
-    let terms = trimmed
-        .split_whitespace()
-        .map(|term| format!("\"{}\"", term.replace('"', "\"\"")))
-        .collect::<Vec<_>>();
-
-    if terms.is_empty() {
-        Some(format!("\"{}\"", trimmed.replace('"', "\"\"")))
-    } else {
-        Some(terms.join(" AND "))
-    }
-}
-
 pub(crate) fn build_like_pattern(value: &str) -> String {
     let escaped = value
         .trim()

@@ -10,6 +10,12 @@ export function parseHighlightTerms(query: string) {
     .filter(
       (term) =>
         term && !term.startsWith("#") && !term.startsWith("!#") && !term.startsWith("@") && !term.startsWith("!@"),
+    )
+    .flatMap((term) =>
+      term
+        .split("/")
+        .map((item) => item.trim())
+        .filter(Boolean),
     );
   const uniqueTerms: string[] = [];
 

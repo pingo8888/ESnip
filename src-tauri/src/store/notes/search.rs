@@ -1,7 +1,7 @@
 use rusqlite::{params_from_iter, types::Value, Connection};
 
 use crate::{
-    core::text::{build_fts_query, build_like_pattern},
+    core::text::build_like_pattern,
     store::notes::{
         kinds::normalize_search_note_kind,
         repository::{collect_notes, map_note_row},
@@ -20,7 +20,7 @@ pub(crate) fn search_notes(
     let page = SearchPage::new(limit, cursor_rank, cursor_updated_at, cursor_id);
     let parsed_query = parse_search_query(&query);
 
-    if parsed_query.text.is_empty() && parsed_query.filters.has_filters() {
+    if parsed_query.text_groups.is_empty() && parsed_query.filters.has_filters() {
         return search_notes_by_filters(conn, &parsed_query.filters, page);
     }
 
@@ -32,7 +32,7 @@ pub(crate) fn search_notes(
         });
     }
 
-    let Some(fts_query) = build_fts_query(&parsed_query.text) else {
+    let Some(fts_query) = build_fts_query(&parsed_query.text_groups) else {
         return Ok(NotesPage {
             notes: Vec::new(),
             next_cursor: None,
@@ -41,7 +41,7 @@ pub(crate) fn search_notes(
     };
 
     if !parsed_query.can_use_fts() {
-        return search_notes_like(conn, &parsed_query.text, &parsed_query.filters, page);
+        return search_notes_like(conn, &parsed_query.text_groups, &parsed_query.filters, page);
     }
 
     let filters = build_filter_sql("notes", &parsed_query.filters, 2);
@@ -118,33 +118,38 @@ pub(crate) fn search_notes(
 
 fn search_notes_like(
     conn: &Connection,
-    query: &str,
+    text_groups: &[TextTermGroup],
     filters: &SearchFilters,
     page: SearchPage,
 ) -> Result<NotesPage, String> {
-    let like_pattern = build_like_pattern(query);
-    let filters = build_filter_sql("notes", filters, 2);
-    let mut values = Vec::with_capacity(5 + filters.param_count);
-    values.push(Value::Text(like_pattern));
+    let text_condition = build_text_like_sql(text_groups, 1);
+    let filters = build_filter_sql("notes", filters, text_condition.param_count + 1);
+    let mut values = Vec::with_capacity(5 + text_condition.param_count + filters.param_count);
+    values.extend(text_condition.values.iter().cloned());
     values.extend(filters.values.iter().cloned());
     let total_count = if page.has_cursor() {
         -1
     } else {
-        count_notes_like(conn, &filters.sql, &values)?
+        count_notes_like(conn, &text_condition.sql, &filters.sql, &values)?
     };
-    let cursor_sql = push_updated_at_cursor_sql(&mut values, &page, filters.param_count + 2);
+    let cursor_sql = push_updated_at_cursor_sql(
+        &mut values,
+        &page,
+        text_condition.param_count + filters.param_count + 1,
+    );
     let limit_param = values.len() + 1;
     values.push(Value::Integer(page.size));
     let mut stmt = conn
         .prepare(&format!(
             "SELECT id, title, content, kind, tone, tags_json, created_at, updated_at
              FROM notes
-             WHERE (COALESCE(title, '') LIKE ?1 ESCAPE '\\'
-                OR COALESCE(content, '') LIKE ?1 ESCAPE '\\')
+             WHERE 1 = 1
+               {text_sql}
                {filter_sql}
                {cursor_sql}
              ORDER BY updated_at DESC, id DESC
              LIMIT ?{limit_param}",
+            text_sql = text_condition.sql,
             filter_sql = filters.sql,
             cursor_sql = cursor_sql,
         ))
@@ -227,16 +232,17 @@ fn count_notes_fts(
 
 fn count_notes_like(
     conn: &Connection,
-    tag_filter_sql: &str,
+    text_sql: &str,
+    filter_sql: &str,
     values: &[Value],
 ) -> Result<i64, String> {
     conn.query_row(
         &format!(
             "SELECT COUNT(*)
              FROM notes
-             WHERE (COALESCE(title, '') LIKE ?1 ESCAPE '\\'
-                OR COALESCE(content, '') LIKE ?1 ESCAPE '\\')
-               {tag_filter_sql}"
+             WHERE 1 = 1
+               {text_sql}
+               {filter_sql}"
         ),
         params_from_iter(values.iter()),
         |row| row.get::<_, i64>(0),
@@ -452,7 +458,7 @@ fn build_filter_sql(
 }
 
 struct ParsedSearchQuery {
-    text: String,
+    text_groups: Vec<TextTermGroup>,
     text_terms: Vec<String>,
     filters: SearchFilters,
 }
@@ -476,7 +482,7 @@ impl ParsedSearchQuery {
 }
 
 fn parse_search_query(query: &str) -> ParsedSearchQuery {
-    let mut text_terms = Vec::new();
+    let mut text_groups = Vec::new();
     let mut filters = SearchFilters::default();
 
     for term in query.split_whitespace() {
@@ -500,19 +506,100 @@ fn parse_search_query(query: &str) -> ParsedSearchQuery {
                 push_unique_value(&mut filters.included_tags, filter);
             }
         } else {
-            text_terms.push(term);
+            let text_terms = parse_text_term_group(term);
+
+            if !text_terms.is_empty() {
+                text_groups.push(text_terms);
+            }
         }
     }
 
-    let text = text_terms.join(" ");
+    let text_terms = text_groups
+        .iter()
+        .flat_map(|group| group.iter().cloned())
+        .collect::<Vec<_>>();
 
     ParsedSearchQuery {
-        text,
-        text_terms: text_terms
-            .into_iter()
-            .map(|term| term.to_string())
-            .collect(),
+        text_groups,
+        text_terms,
         filters,
+    }
+}
+
+type TextTermGroup = Vec<String>;
+
+fn parse_text_term_group(term: &str) -> TextTermGroup {
+    term.split('/')
+        .map(str::trim)
+        .filter(|item| !item.is_empty())
+        .map(str::to_string)
+        .collect()
+}
+
+fn build_fts_query(text_groups: &[TextTermGroup]) -> Option<String> {
+    let groups = text_groups
+        .iter()
+        .filter_map(|group| {
+            let terms = group
+                .iter()
+                .filter(|term| !term.trim().is_empty())
+                .map(|term| format!("\"{}\"", term.replace('"', "\"\"")))
+                .collect::<Vec<_>>();
+
+            match terms.len() {
+                0 => None,
+                1 => terms.into_iter().next(),
+                _ => Some(format!("({})", terms.join(" OR "))),
+            }
+        })
+        .collect::<Vec<_>>();
+
+    if groups.is_empty() {
+        None
+    } else {
+        Some(groups.join(" AND "))
+    }
+}
+
+struct BuiltTextCondition {
+    sql: String,
+    values: Vec<Value>,
+    param_count: usize,
+}
+
+fn build_text_like_sql(
+    text_groups: &[TextTermGroup],
+    first_param_index: usize,
+) -> BuiltTextCondition {
+    let mut values = Vec::new();
+    let mut group_sql = Vec::new();
+
+    for group in text_groups {
+        let mut term_sql = Vec::new();
+
+        for term in group {
+            let param_index = first_param_index + values.len();
+            values.push(Value::Text(build_like_pattern(term)));
+            term_sql.push(format!(
+                "(COALESCE(title, '') LIKE ?{param_index} ESCAPE '\\'
+                   OR COALESCE(content, '') LIKE ?{param_index} ESCAPE '\\')"
+            ));
+        }
+
+        if !term_sql.is_empty() {
+            group_sql.push(format!("({})", term_sql.join(" OR ")));
+        }
+    }
+
+    let sql = group_sql
+        .into_iter()
+        .map(|group| format!(" AND {group}"))
+        .collect::<String>();
+
+    BuiltTextCondition {
+        sql,
+        param_count: values.len(),
+        values,
     }
 }
 

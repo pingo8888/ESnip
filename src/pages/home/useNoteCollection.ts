@@ -236,13 +236,20 @@ function parseSearchQuery(query: string) {
       continue;
     }
 
-    textTerms.push(term);
+    textTerms.push(...parseTextTermGroup(term));
   }
 
   return {
     hasFilters,
     textTerms,
   };
+}
+
+function parseTextTermGroup(term: string) {
+  return term
+    .split("/")
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function isSearchableTextTerm(value: string) {

@@ -64,6 +64,147 @@ fn short_query_rules_are_consistent_with_like_fallback() {
 }
 
 #[test]
+fn text_search_supports_slash_or_groups() {
+    let conn = open_test_connection();
+    create_test_note(
+        &conn,
+        Some("Alchemy guide"),
+        Some("reference"),
+        "word",
+        &[],
+        300,
+    );
+    create_test_note(
+        &conn,
+        Some("Garden guide"),
+        Some("reference"),
+        "word",
+        &[],
+        200,
+    );
+    create_test_note(
+        &conn,
+        Some("Kitchen note"),
+        Some("reference"),
+        "word",
+        &[],
+        100,
+    );
+
+    assert_titles_match(
+        search_titles(&conn, "alchemy/garden"),
+        &["Alchemy guide", "Garden guide"],
+    );
+}
+
+#[test]
+fn text_search_combines_slash_or_groups_with_space_and() {
+    let conn = open_test_connection();
+    create_test_note(
+        &conn,
+        Some("Alchemy reference"),
+        Some("old guide"),
+        "word",
+        &[],
+        300,
+    );
+    create_test_note(
+        &conn,
+        Some("Garden reference"),
+        Some("green guide"),
+        "word",
+        &[],
+        200,
+    );
+    create_test_note(
+        &conn,
+        Some("Alchemy draft"),
+        Some("loose note"),
+        "word",
+        &[],
+        100,
+    );
+
+    assert_titles_match(
+        search_titles(&conn, "alchemy/garden reference"),
+        &["Alchemy reference", "Garden reference"],
+    );
+}
+
+#[test]
+fn text_slash_or_groups_work_with_filters() {
+    let conn = open_test_connection();
+    create_test_note(
+        &conn,
+        Some("Alchemy guide"),
+        Some("reference"),
+        "word",
+        &["tech"],
+        300,
+    );
+    create_test_note(
+        &conn,
+        Some("Garden guide"),
+        Some("reference"),
+        "word",
+        &["life"],
+        200,
+    );
+    create_test_note(
+        &conn,
+        Some("Garden tech"),
+        Some("reference"),
+        "word",
+        &["tech"],
+        100,
+    );
+
+    assert_eq!(
+        search_titles(&conn, "#tech alchemy/garden"),
+        vec!["Alchemy guide", "Garden tech"]
+    );
+}
+
+#[test]
+fn slash_is_not_or_for_tag_filters() {
+    let conn = open_test_connection();
+    create_test_note(
+        &conn,
+        Some("Tech note"),
+        Some("reference"),
+        "word",
+        &["tech"],
+        300,
+    );
+    create_test_note(
+        &conn,
+        Some("Life note"),
+        Some("reference"),
+        "word",
+        &["life"],
+        200,
+    );
+
+    assert!(search_titles(&conn, "#tech/#life").is_empty());
+}
+
+#[test]
+fn slash_or_short_terms_follow_existing_short_query_rules() {
+    let conn = open_test_connection();
+    create_test_note(
+        &conn,
+        Some("工学理论"),
+        Some("短查询"),
+        "word",
+        &["topic"],
+        100,
+    );
+
+    assert!(search_titles(&conn, "工/学").is_empty());
+    assert_eq!(search_titles(&conn, "#topic 工/学"), vec!["工学理论"]);
+}
+
+#[test]
 fn fts_search_uses_cursor_without_duplicates() {
     let conn = open_test_connection();
     create_test_note(
@@ -209,4 +350,14 @@ fn search_titles(conn: &Connection, query: &str) -> Vec<String> {
         .into_iter()
         .filter_map(|note| note.title)
         .collect()
+}
+
+fn assert_titles_match(actual: Vec<String>, expected: &[&str]) {
+    let actual = actual.into_iter().collect::<HashSet<_>>();
+    let expected = expected
+        .iter()
+        .map(|title| title.to_string())
+        .collect::<HashSet<_>>();
+
+    assert_eq!(actual, expected);
 }
