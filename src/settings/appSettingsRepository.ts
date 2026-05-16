@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { Locale } from "../i18n/types";
 
 export type AppSettings = {
+  cleanBracketedContentOnCapture: boolean;
   dataDir: string;
   hotkeys: HotkeySettings;
   locale: Locale;

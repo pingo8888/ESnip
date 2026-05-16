@@ -2,6 +2,7 @@
 .path-row button,
 .tag-actions button,
 .shortcut-row button,
+.toggle-switch,
 .update-row button {
   border: 0;
   padding: 0;
@@ -219,6 +220,38 @@
   background: var(--color-field-bg);
   font-size: 0.9rem;
   white-space: nowrap;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--color-field-bg);
+}
+
+.toggle-switch span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-body-muted);
+  transition:
+    background 0.16s ease,
+    transform 0.16s ease;
+}
+
+.toggle-switch[aria-checked="true"] {
+  border-color: var(--color-text);
+  background: var(--color-text);
+}
+
+.toggle-switch[aria-checked="true"] span {
+  background: var(--color-cream);
+  transform: translateX(20px);
 }
 
 .tag-manager-list {

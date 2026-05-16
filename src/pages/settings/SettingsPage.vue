@@ -51,7 +51,17 @@ const shortcutMessages = reactive<Record<HotkeyAction, string>>({
 });
 let globalHotkeysDisabledByCapture = false;
 const { languageOptions, locale, selectedLanguageLabel, setLocale, t, translateError } = useI18n();
-const { dataDir, hotkeys, replaceSettings, resetHotkey, searchEngine, setHotkey, setSearchEngine } = useAppSettings();
+const {
+  cleanBracketedContentOnCapture,
+  dataDir,
+  hotkeys,
+  replaceSettings,
+  resetHotkey,
+  searchEngine,
+  setCleanBracketedContentOnCapture,
+  setHotkey,
+  setSearchEngine,
+} = useAppSettings();
 const { checkAndInstallUpdate, isBusy: isUpdateBusy, message: updateMessage } = useAppUpdater();
 
 const emit = defineEmits<{
@@ -106,6 +116,10 @@ function selectLanguage(value: Locale) {
 function selectSearchEngine(value: SearchEngine) {
   void setSearchEngine(value);
   isSearchEngineSelectOpen.value = false;
+}
+
+function toggleBracketedContentCleanup() {
+  void setCleanBracketedContentOnCapture(!cleanBracketedContentOnCapture.value);
 }
 
 function toggleLanguageSelect() {
@@ -477,6 +491,21 @@ watch(activeTab, (tab) => {
                 </span>
               </span>
             </label>
+
+            <section class="setting-row">
+              <span class="setting-title">{{ t("settings.general.cleanBracketedContent") }}</span>
+              <span class="setting-description">{{ t("settings.general.cleanBracketedContentDescription") }}</span>
+              <button
+                type="button"
+                class="toggle-switch"
+                role="switch"
+                :aria-label="t('settings.general.cleanBracketedContent')"
+                :aria-checked="cleanBracketedContentOnCapture"
+                @click="toggleBracketedContentCleanup"
+              >
+                <span aria-hidden="true"></span>
+              </button>
+            </section>
 
             <label class="setting-row">
               <span class="setting-title">{{ t("settings.storage.path") }}</span>

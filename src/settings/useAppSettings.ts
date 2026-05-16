@@ -17,6 +17,7 @@ const DEFAULT_HOTKEYS: HotkeySettings = {
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
+  cleanBracketedContentOnCapture: false,
   dataDir: "",
   hotkeys: { ...DEFAULT_HOTKEYS },
   locale: detectBrowserLocale(),
@@ -44,16 +45,22 @@ export async function initAppSettings() {
 
 export function useAppSettings() {
   return {
+    cleanBracketedContentOnCapture: computed(() => settings.value.cleanBracketedContentOnCapture),
     dataDir: computed(() => settings.value.dataDir),
     hotkeys: computed(() => settings.value.hotkeys),
     locale: computed(() => settings.value.locale),
     searchEngine: computed(() => settings.value.searchEngine),
     replaceSettings,
     resetHotkey,
+    setCleanBracketedContentOnCapture,
     setHotkey,
     setLocale,
     setSearchEngine,
   };
+}
+
+export async function setCleanBracketedContentOnCapture(cleanBracketedContentOnCapture: boolean) {
+  await saveSettings({ cleanBracketedContentOnCapture });
 }
 
 export async function setLocale(locale: Locale) {
@@ -100,6 +107,7 @@ function replaceSettings(nextSettings: AppSettings) {
 
 function normalizeSettings(value: AppSettings): AppSettings {
   return {
+    cleanBracketedContentOnCapture: value.cleanBracketedContentOnCapture === true,
     dataDir: value.dataDir ?? "",
     hotkeys: normalizeHotkeys(value.hotkeys),
     locale: value.locale === "en-US" ? "en-US" : "zh-CN",

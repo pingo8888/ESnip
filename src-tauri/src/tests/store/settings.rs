@@ -35,9 +35,15 @@ fn duplicate_hotkeys_are_detected_case_insensitively() {
 }
 
 #[test]
+fn bracketed_content_cleanup_defaults_to_off() {
+    assert!(!AppSettings::default().clean_bracketed_content_on_capture);
+}
+
+#[test]
 fn apply_user_settings_preserves_window_state() {
     let mut current = AppSettings {
         locale: "zh-CN".to_string(),
+        clean_bracketed_content_on_capture: false,
         data_dir: "D:\\old".to_string(),
         hotkeys: HotkeySettings::default(),
         search_engine: "google".to_string(),
@@ -48,6 +54,7 @@ fn apply_user_settings_preserves_window_state() {
     };
     let incoming = AppSettings {
         locale: "en-US".to_string(),
+        clean_bracketed_content_on_capture: true,
         data_dir: "D:\\new".to_string(),
         hotkeys: HotkeySettings {
             title: "Alt+Q".to_string(),
@@ -65,6 +72,7 @@ fn apply_user_settings_preserves_window_state() {
     current.apply_user_settings(&incoming);
 
     assert_eq!(current.locale, "en-US");
+    assert!(current.clean_bracketed_content_on_capture);
     assert_eq!(current.data_dir, "D:\\new");
     assert_eq!(current.hotkeys.title, "Alt+Q");
     assert_eq!(current.hotkeys.content, "Ctrl+Alt+C");

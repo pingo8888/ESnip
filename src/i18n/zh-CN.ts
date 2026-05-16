@@ -40,6 +40,8 @@ export const zhCNMessages = {
   "newCard.titlePlaceholder": "可以留空，也可以写一个短标题...",
   "settings.actions": "设置操作",
   "settings.general.checkUpdates": "检查更新",
+  "settings.general.cleanBracketedContent": "粘贴/取词时清理方括号内容",
+  "settings.general.cleanBracketedContentDescription": "开启后，往内容输入框粘贴或使用内容摘抄快捷键时，会移除 [ ] 及其中内容。",
   "settings.general.latest": "当前已是最新版本。",
   "settings.general.language": "语言",
   "settings.general.languageDescription": "菜单、标签和提示文本使用的界面语言。",

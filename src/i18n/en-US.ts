@@ -42,6 +42,8 @@ export const enUSMessages = {
   "newCard.titlePlaceholder": "Leave it blank, or write a short title...",
   "settings.actions": "Settings actions",
   "settings.general.checkUpdates": "Check for updates",
+  "settings.general.cleanBracketedContent": "Clean bracketed content on paste/capture",
+  "settings.general.cleanBracketedContentDescription": "When enabled, pasting into the content field or using content capture shortcuts removes [ ] and the text inside.",
   "settings.general.latest": "You are on the latest version.",
   "settings.general.language": "Language",
   "settings.general.languageDescription": "Interface language for menus, labels, and prompts.",

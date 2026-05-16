@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { ArrowLeft, Settings } from "lucide-vue-next";
 import { useI18n } from "../../i18n";
 import { isHotkeyEvent } from "../../settings/hotkeys";
 import { releaseHotkeysDisabled, requestHotkeysDisabled } from "../../settings/appSettingsRepository";
 import { useAppSettings } from "../../settings/useAppSettings";
+import { cleanBracketedContent } from "../../text/cleanBracketedContent";
 import { noteKindDefinitions } from "../../notes/noteKinds";
 import { computeColumnLayout } from "../home/cardColumns";
 import { measuredHomeCardSize } from "../home/homeCardMetrics";
@@ -37,6 +38,7 @@ const noteKinds: NoteKind[] = noteKindDefinitions.map((definition) => definition
 const noteTones: NoteTone[] = ["sage", "ochre", "clay", "ink"];
 
 const titleInputRef = ref<HTMLInputElement | null>(null);
+const excerptInputRef = ref<HTMLTextAreaElement | null>(null);
 const kind = ref<NoteKind>("word");
 const tone = ref<NoteTone>("sage");
 const title = ref("");
@@ -44,7 +46,7 @@ const excerpt = ref("");
 const tagsInput = ref("");
 const tagSuggestionsOpen = ref(false);
 const { t, translateNoteKind } = useI18n();
-const { hotkeys } = useAppSettings();
+const { cleanBracketedContentOnCapture, hotkeys } = useAppSettings();
 let globalHotkeysDisabledByPage = false;
 
 const windowWidth = ref(document.documentElement.clientWidth);
@@ -104,6 +106,36 @@ function saveCard() {
         }
       : input,
   );
+}
+
+function handleExcerptPaste(event: ClipboardEvent) {
+  if (!cleanBracketedContentOnCapture.value) {
+    return;
+  }
+
+  const pastedText = event.clipboardData?.getData("text/plain") ?? "";
+  const cleanedText = cleanBracketedContent(pastedText);
+
+  if (!pastedText || cleanedText === pastedText) {
+    return;
+  }
+
+  const target = event.currentTarget instanceof HTMLTextAreaElement ? event.currentTarget : excerptInputRef.value;
+
+  if (!target) {
+    return;
+  }
+
+  event.preventDefault();
+
+  const selectionStart = target.selectionStart ?? excerpt.value.length;
+  const selectionEnd = target.selectionEnd ?? selectionStart;
+  excerpt.value = `${excerpt.value.slice(0, selectionStart)}${cleanedText}${excerpt.value.slice(selectionEnd)}`;
+
+  const caretPosition = selectionStart + cleanedText.length;
+  void nextTick(() => {
+    target.setSelectionRange(caretPosition, caretPosition);
+  });
 }
 
 function applyLocalCaptureHotkey(event: KeyboardEvent) {
@@ -261,7 +293,13 @@ onUnmounted(() => {
 
         <label class="field-group">
           <span class="field-label">{{ t("newCard.content") }}</span>
-          <textarea v-model="excerpt" rows="5" :placeholder="t('newCard.contentPlaceholder')"></textarea>
+          <textarea
+            ref="excerptInputRef"
+            v-model="excerpt"
+            rows="5"
+            :placeholder="t('newCard.contentPlaceholder')"
+            @paste="handleExcerptPaste"
+          ></textarea>
         </label>
 
         <div class="split-row">

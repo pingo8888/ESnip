@@ -38,6 +38,8 @@ pub(crate) struct AppSettings {
     #[serde(default = "default_locale")]
     locale: String,
     #[serde(default)]
+    clean_bracketed_content_on_capture: bool,
+    #[serde(default)]
     data_dir: String,
     #[serde(default)]
     hotkeys: HotkeySettings,
@@ -70,6 +72,7 @@ impl Default for AppSettings {
     fn default() -> Self {
         Self {
             locale: default_locale(),
+            clean_bracketed_content_on_capture: false,
             data_dir: String::new(),
             hotkeys: HotkeySettings::default(),
             search_engine: default_search_engine(),
@@ -105,6 +108,7 @@ impl AppSettings {
         // The settings page owns user-editable fields only; window state is
         // persisted separately and must survive frontend settings saves.
         self.locale = settings.locale.clone();
+        self.clean_bracketed_content_on_capture = settings.clean_bracketed_content_on_capture;
         self.data_dir = settings.data_dir.clone();
         self.hotkeys = settings.hotkeys.clone();
         self.search_engine = settings.search_engine.clone();
@@ -300,6 +304,7 @@ fn normalize_settings<R: Runtime>(
 
     Ok(AppSettings {
         locale: normalize_locale(settings.locale),
+        clean_bracketed_content_on_capture: settings.clean_bracketed_content_on_capture,
         data_dir: normalize_data_dir(&data_dir)?,
         hotkeys: if has_duplicate_hotkeys(&hotkeys) {
             HotkeySettings::default()

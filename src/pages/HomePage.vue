@@ -4,6 +4,8 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { initI18n } from "../i18n";
+import { useAppSettings } from "../settings/useAppSettings";
+import { cleanBracketedContent } from "../text/cleanBracketedContent";
 import { useAppUpdater } from "../updates/useAppUpdater";
 import DeleteNoteConfirm from "./home/DeleteNoteConfirm.vue";
 import HomeShellView from "./home/HomeShellView.vue";
@@ -40,6 +42,7 @@ const {
   totalCount,
   updateNote,
 } = useNoteCollection();
+const { cleanBracketedContentOnCapture } = useAppSettings();
 const { checkAndInstallUpdate, checkForUpdate, hasUpdate, isBusy: isUpdateBusy } = useAppUpdater();
 const editingNote = ref<Note | null>(null);
 const deletingNote = ref<Note | null>(null);
@@ -203,7 +206,8 @@ function handleQuickCaptureContent(payload: QuickCaptureContentPayload) {
     return;
   }
 
-  const content = payload.content?.trim() ?? "";
+  const rawContent = payload.content?.trim() ?? "";
+  const content = cleanBracketedContentOnCapture.value ? cleanBracketedContent(rawContent) : rawContent;
   showNewCardPage("", content, payload.kind ?? "sentence");
 }
 
