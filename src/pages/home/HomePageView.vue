@@ -36,7 +36,7 @@ const emit = defineEmits<{
   updateSearchQuery: [query: string];
 }>();
 
-const { t } = useI18n();
+const { locale, t } = useI18n();
 const { searchEngine } = useAppSettings();
 const contextMenu = ref<{
   cardElement: HTMLElement;
@@ -48,16 +48,17 @@ const hasRequestedNearBottomLoad = ref(false);
 const notesScrollEl = ref<HTMLElement | null>(null);
 const noteKindCounts = ref<Record<string, number>>({});
 const visibleNoteCount = computed(() => props.masonryColumns.reduce((total, column) => total + column.length, 0));
+const formattedResultCount = computed(() => new Intl.NumberFormat(locale.value).format(props.resultCount));
 const sectionTitle = computed(() => {
   if (props.isSearchQueryTooShort) {
     return t("home.searchTooShort");
   }
 
   if (props.searchQuery.trim()) {
-    return t("home.searchResults", { count: props.resultCount });
+    return t("home.searchResults", { count: formattedResultCount.value });
   }
 
-  return t("home.cardsCount", { count: props.resultCount });
+  return t("home.cardsCount", { count: formattedResultCount.value });
 });
 const highlightTerms = computed(() => parseHighlightTerms(props.searchQuery));
 const noteKindSearchSuggestions = computed<SuggestionItem[]>(() =>
