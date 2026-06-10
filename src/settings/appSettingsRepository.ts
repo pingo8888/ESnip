@@ -7,7 +7,10 @@ export type AppSettings = {
   hotkeys: HotkeySettings;
   locale: Locale;
   searchEngine: SearchEngine;
+  theme: AppTheme;
 };
+
+export type AppTheme = "light" | "dark";
 
 export type HotkeyAction = "title" | "content" | "paragraph" | "save";
 

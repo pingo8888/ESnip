@@ -11,6 +11,7 @@ use crate::app::state::SettingsState;
 const SETTINGS_FILE_NAME: &str = "settings.json";
 const DEFAULT_LOCALE: &str = "zh-CN";
 const DEFAULT_SEARCH_ENGINE: &str = "google";
+const DEFAULT_THEME: &str = "light";
 pub(crate) const DEFAULT_TITLE_HOTKEY: &str = "Alt+W";
 pub(crate) const DEFAULT_CONTENT_HOTKEY: &str = "Alt+S";
 pub(crate) const DEFAULT_PARAGRAPH_HOTKEY: &str = "Alt+P";
@@ -45,6 +46,8 @@ pub(crate) struct AppSettings {
     hotkeys: HotkeySettings,
     #[serde(default = "default_search_engine")]
     search_engine: String,
+    #[serde(default = "default_theme")]
+    theme: String,
     #[serde(default)]
     window_x: Option<i32>,
     #[serde(default)]
@@ -76,6 +79,7 @@ impl Default for AppSettings {
             data_dir: String::new(),
             hotkeys: HotkeySettings::default(),
             search_engine: default_search_engine(),
+            theme: default_theme(),
             window_x: None,
             window_y: None,
             window_width: None,
@@ -112,6 +116,7 @@ impl AppSettings {
         self.data_dir = settings.data_dir.clone();
         self.hotkeys = settings.hotkeys.clone();
         self.search_engine = settings.search_engine.clone();
+        self.theme = settings.theme.clone();
     }
 }
 
@@ -312,6 +317,7 @@ fn normalize_settings<R: Runtime>(
             hotkeys
         },
         search_engine: normalize_search_engine(settings.search_engine),
+        theme: normalize_theme(settings.theme),
         window_x: sanitize_window_position(settings.window_x, settings.window_y).map(|(x, _)| x),
         window_y: sanitize_window_position(settings.window_x, settings.window_y).map(|(_, y)| y),
         window_width: sanitize_window_size(settings.window_width, settings.window_height)
@@ -356,12 +362,23 @@ fn normalize_search_engine(search_engine: String) -> String {
     }
 }
 
+fn normalize_theme(theme: String) -> String {
+    match theme.as_str() {
+        "light" | "dark" => theme,
+        _ => DEFAULT_THEME.to_string(),
+    }
+}
+
 fn default_locale() -> String {
     DEFAULT_LOCALE.to_string()
 }
 
 fn default_search_engine() -> String {
     DEFAULT_SEARCH_ENGINE.to_string()
+}
+
+fn default_theme() -> String {
+    DEFAULT_THEME.to_string()
 }
 
 fn settings_with_initial_locale() -> AppSettings {

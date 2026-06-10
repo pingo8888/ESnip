@@ -42,7 +42,7 @@ const {
   totalCount,
   updateNote,
 } = useNoteCollection();
-const { cleanBracketedContentOnCapture } = useAppSettings();
+const { cleanBracketedContentOnCapture, setTheme, theme } = useAppSettings();
 const { checkAndInstallUpdate, checkForUpdate, hasUpdate, isBusy: isUpdateBusy } = useAppUpdater();
 const editingNote = ref<Note | null>(null);
 const deletingNote = ref<Note | null>(null);
@@ -330,6 +330,10 @@ async function toggleAlwaysOnTop() {
   }
 }
 
+function toggleTheme() {
+  void setTheme(theme.value === "dark" ? "light" : "dark");
+}
+
 async function toggleMaximizeWindow() {
   await getCurrentWindow().toggleMaximize();
 }
@@ -357,11 +361,13 @@ async function handleTitlebarMouseDown(event: MouseEvent) {
 <template>
   <HomeShellView
     :always-on-top="alwaysOnTop"
+    :theme="theme"
     @close-window="closeWindow"
     @minimize-window="minimizeWindow"
     @titlebar-mouse-down="handleTitlebarMouseDown"
     @toggle-always-on-top="toggleAlwaysOnTop"
     @toggle-maximize-window="toggleMaximizeWindow"
+    @toggle-theme="toggleTheme"
   >
     <HomePageView
       v-show="activePage === 'home'"

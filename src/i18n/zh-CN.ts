@@ -102,6 +102,8 @@ export const zhCNMessages = {
   "window.maximize": "最大化",
   "window.minimize": "最小化",
   "window.pin": "置顶窗口",
+  "window.switchToDarkMode": "切换到夜间模式",
+  "window.switchToLightMode": "切换到浅色模式",
   "window.unpin": "取消置顶",
   "deleteDialog.copy": "确定移除卡片？此操作无法撤销。",
   "deleteDialog.title": "删除这张卡片？",

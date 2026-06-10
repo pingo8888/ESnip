@@ -40,6 +40,17 @@ fn bracketed_content_cleanup_defaults_to_off() {
 }
 
 #[test]
+fn theme_defaults_to_light() {
+    assert_eq!(AppSettings::default().theme, "light");
+}
+
+#[test]
+fn normalize_theme_rejects_unknown_values() {
+    assert_eq!(normalize_theme("dark".to_string()), "dark");
+    assert_eq!(normalize_theme("system".to_string()), "light");
+}
+
+#[test]
 fn apply_user_settings_preserves_window_state() {
     let mut current = AppSettings {
         locale: "zh-CN".to_string(),
@@ -47,6 +58,7 @@ fn apply_user_settings_preserves_window_state() {
         data_dir: "D:\\old".to_string(),
         hotkeys: HotkeySettings::default(),
         search_engine: "google".to_string(),
+        theme: "light".to_string(),
         window_x: Some(10),
         window_y: Some(20),
         window_width: Some(800),
@@ -63,6 +75,7 @@ fn apply_user_settings_preserves_window_state() {
             save: "Ctrl+Alt+S".to_string(),
         },
         search_engine: "bing".to_string(),
+        theme: "dark".to_string(),
         window_x: None,
         window_y: None,
         window_width: None,
@@ -79,6 +92,7 @@ fn apply_user_settings_preserves_window_state() {
     assert_eq!(current.hotkeys.paragraph, "Ctrl+Alt+P");
     assert_eq!(current.hotkeys.save, "Ctrl+Alt+S");
     assert_eq!(current.search_engine, "bing");
+    assert_eq!(current.theme, "dark");
     assert_eq!(current.window_x, Some(10));
     assert_eq!(current.window_y, Some(20));
     assert_eq!(current.window_width, Some(800));
