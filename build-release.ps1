@@ -59,7 +59,7 @@ if (-not (Test-Path -LiteralPath $PrivateKeyPath)) {
 
 $env:TAURI_SIGNING_PRIVATE_KEY = Get-Content -Raw -LiteralPath $PrivateKeyPath
 
-pnpm run tauri -- build
+pnpm run tauri build
 
 $ReleaseDir = Join-Path $Root "release\$Version"
 New-Item -ItemType Directory -Path $ReleaseDir -Force | Out-Null
